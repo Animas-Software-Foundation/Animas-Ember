@@ -1,12 +1,25 @@
 name: Build & Release
 
-# Every push to main builds all platforms and publishes/updates a GitHub Release automatically.
+# How releases work
+#   VERSION     plain semver, e.g. 0.0.1. Single source of truth for the version and the git tag (v<VERSION>).
+#   RELEASE.md  its first "# " heading is the release title; everything below it is the release notes.
+#
+# To publish: edit VERSION and RELEASE.md, commit, and push to main. If the tag v<VERSION> does not exist yet,
+# this workflow builds every platform, creates the tag, and publishes the GitHub Release.
+# Pushing a tag by hand also works (it must equal v<VERSION>).
+# Actions > Build & Release > Run workflow builds everything; tick "release" to publish too.
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      release:
+        description: "Also publish a release (only if the tag for VERSION does not exist yet)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -16,6 +29,91 @@ env:
   PROJECT_SLUG: animas-ember
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # Reads VERSION and RELEASE.md and decides what this run should do.
+  meta:
+    name: Read VERSION and RELEASE.md
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.read.outputs.version }}
+      tag: ${{ steps.read.outputs.tag }}
+      title: ${{ steps.read.outputs.title }}
+      prerelease: ${{ steps.read.outputs.prerelease }}
+      release: ${{ steps.read.outputs.release }}
+      build: ${{ steps.read.outputs.build }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: read
+        env:
+          INPUT_RELEASE: ${{ inputs.release }}
+        run: |
+          VERSION="$(tr -d ' \r\n' < VERSION)"
+          if ! [[ "$VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error file=VERSION::'$VERSION' is not semver (expected e.g. 1.2.3 or 1.2.3-beta.1)"; exit 1
+          fi
+          TAG="v$VERSION"
+          TITLE="$(grep -m1 '^# ' RELEASE.md | sed 's/^# *//')"
+          if [ -z "$TITLE" ]; then
+            echo "::error file=RELEASE.md::RELEASE.md needs a first-level heading (# Title) to use as the release title"; exit 1
+          fi
+          PRERELEASE=false
+          if [ "${BASH_REMATCH[1]}" = "0" ] || [ -n "${BASH_REMATCH[4]}" ]; then PRERELEASE=true; fi
+
+          TAG_EXISTS=false
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then TAG_EXISTS=true; fi
+
+          RELEASE=false
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            if [ "$GITHUB_REF_NAME" != "$TAG" ]; then
+              echo "::error::Pushed tag $GITHUB_REF_NAME does not match VERSION ($TAG). Fix VERSION or retag."; exit 1
+            fi
+            RELEASE=true
+          elif [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$TAG_EXISTS" = "false" ]; then
+            RELEASE=true      # new VERSION landed on main
+          elif [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "$INPUT_RELEASE" = "true" ]; then
+            if [ "$TAG_EXISTS" = "true" ]; then
+              echo "::warning::Tag $TAG already exists, so no release will be published. Bump VERSION first."
+            else
+              RELEASE=true
+            fi
+          fi
+          BUILD=false
+          if [ "$RELEASE" = "true" ] || [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then BUILD=true; fi
+
+          # Release notes: RELEASE.md without its title line, plus a downloads list.
+          mkdir -p notes
+          {
+            awk 'f{print} /^# /&&!f{f=1}' RELEASE.md
+            echo
+            echo "## Downloads"
+            echo
+            echo "Files are named \`${PROJECT_SLUG}-${TAG}-<platform>\`. A \`SHA256SUMS.txt\` is attached for verification."
+            echo
+            echo "| Platform | Architectures |"
+            echo "|----------|---------------|"
+            echo "| Windows (\`.zip\`) | x86_64, x86_32, arm64 |"
+            echo "| Linux (\`.tar.gz\`) | x86_64, x86_32, arm64, arm32 |"
+            echo "| macOS (\`.zip\`) | universal (Intel + Apple Silicon) |"
+            echo "| Android (\`.apk\`) | arm64, arm32, x86_64, x86, universal |"
+          } > notes/NOTES.md
+
+          {
+            echo "version=$VERSION"
+            echo "tag=$TAG"
+            echo "title=$TITLE"
+            echo "prerelease=$PRERELEASE"
+            echo "release=$RELEASE"
+            echo "build=$BUILD"
+          } >> "$GITHUB_OUTPUT"
+          echo "### $TITLE" >> "$GITHUB_STEP_SUMMARY"
+          echo "tag \`$TAG\` · prerelease: $PRERELEASE · publish: $RELEASE · build: $BUILD" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: notes/NOTES.md
+
   # ---------------------------------------------------------------------------
   test:
     name: Smoke test
@@ -28,30 +126,27 @@ jobs:
           use-dotnet: false
           include-templates: false
       - name: Import project
-        run: godot --headless --import || true   # first import prints harmless errors
+        run: godot --headless --import || true
       - name: Run smoke test
         run: godot --headless -s tools/smoke_test.gd
 
   # ---------------------------------------------------------------------------
   desktop:
     name: ${{ matrix.preset }}
-    if: github.event_name != 'pull_request'
-    needs: test
+    needs: [meta, test]
+    if: needs.meta.outputs.build == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Windows
           - { preset: "Windows x86_64", file: "AnimasEmber-windows-x86_64.exe", pack: zip, asset: windows-x86_64 }
           - { preset: "Windows x86_32", file: "AnimasEmber-windows-x86_32.exe", pack: zip, asset: windows-x86_32 }
           - { preset: "Windows arm64",  file: "AnimasEmber-windows-arm64.exe",  pack: zip, asset: windows-arm64 }
-          # Linux
           - { preset: "Linux x86_64", file: "AnimasEmber-linux-x86_64.x86_64", pack: tar, asset: linux-x86_64 }
           - { preset: "Linux x86_32", file: "AnimasEmber-linux-x86_32.x86_32", pack: tar, asset: linux-x86_32 }
           - { preset: "Linux arm64",  file: "AnimasEmber-linux-arm64.arm64",   pack: tar, asset: linux-arm64 }
           - { preset: "Linux arm32",  file: "AnimasEmber-linux-arm32.arm32",   pack: tar, asset: linux-arm32 }
-          # macOS (one universal build: Intel x86_64 + Apple Silicon arm64)
           - { preset: "macOS", file: "AnimasEmber-macos-universal.zip", pack: copy, asset: macos-universal }
     steps:
       - uses: actions/checkout@v4
@@ -60,6 +155,8 @@ jobs:
           version: ${{ env.GODOT_VERSION }}
           use-dotnet: false
           include-templates: true
+      - name: Stamp version ${{ needs.meta.outputs.version }}
+        run: python3 tools/sync_version.py
       - name: Export
         run: |
           mkdir -p build dist
@@ -68,8 +165,7 @@ jobs:
           test -s "build/${{ matrix.file }}"
       - name: Package
         run: |
-          VER="v$(tr -d '[:space:]' < VERSION)"
-          NAME="${PROJECT_SLUG}-${VER}-${{ matrix.asset }}"
+          NAME="${PROJECT_SLUG}-${{ needs.meta.outputs.tag }}-${{ matrix.asset }}"
           cd build
           case "${{ matrix.pack }}" in
             zip)  zip -9 "../dist/${NAME}.zip" "${{ matrix.file }}" ;;
@@ -85,8 +181,8 @@ jobs:
   # ---------------------------------------------------------------------------
   android:
     name: Android ${{ matrix.asset }}
-    if: github.event_name != 'pull_request'
-    needs: test
+    needs: [meta, test]
+    if: needs.meta.outputs.build == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -115,10 +211,12 @@ jobs:
           version: ${{ env.GODOT_VERSION }}
           use-dotnet: false
           include-templates: true
+      - name: Stamp version ${{ needs.meta.outputs.version }}
+        run: python3 tools/sync_version.py
       - name: Point Godot at the Android SDK and JDK
         run: |
           mkdir -p ~/.config/godot
-          cat > ~/.config/godot/editor_settings-4.3.tres <<SETTINGS
+          cat > ~/.config/godot/editor_settings-${GODOT_VERSION%.*}.tres <<SETTINGS
           [gd_resource type="EditorSettings" format=3]
 
           [resource]
@@ -130,26 +228,25 @@ jobs:
           KS="$RUNNER_TEMP/release.keystore"
           if [ -n "$KEYSTORE_B64" ]; then
             echo "$KEYSTORE_B64" | base64 -d > "$KS"
-            USER="$KEY_ALIAS"; PASS="$KEY_PASSWORD"
+            KUSER="$KEY_ALIAS"; KPASS="$KEY_PASSWORD"
             echo "Using the release keystore from repository secrets."
           else
-            # No secrets configured: sign with a throwaway key so the APK still installs.
-            # Updates will NOT install over builds signed with a different key; add the secrets for stable releases.
-            USER="animas"; PASS="android-ci"
-            keytool -genkeypair -v -keystore "$KS" -alias "$USER" -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass "$PASS" -keypass "$PASS" -dname "CN=Animas Ember CI, O=Pixel Pulse Games"
+            # No secrets: sign with a throwaway key so the APK still installs. Updates will NOT install over
+            # builds signed with a different key; add the ANDROID_* secrets for stable releases.
+            KUSER="animas"; KPASS="android-ci"
+            keytool -genkeypair -v -keystore "$KS" -alias "$KUSER" -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$KPASS" -keypass "$KPASS" -dname "CN=Animas Ember CI, O=Pixel Pulse Games"
           fi
-          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=$KS"   >> "$GITHUB_ENV"
-          echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=$USER" >> "$GITHUB_ENV"
-          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=$PASS" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=$KS"       >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=$KUSER"    >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=$KPASS" >> "$GITHUB_ENV"
       - name: Export APK
         run: |
           mkdir -p build dist
           godot --headless --import || true
           godot --headless --export-release "${{ matrix.preset }}" "build/${{ matrix.file }}"
           test -s "build/${{ matrix.file }}"
-          VER="v$(tr -d '[:space:]' < VERSION)"
-          cp "build/${{ matrix.file }}" "dist/${PROJECT_SLUG}-${VER}-${{ matrix.asset }}.apk"
+          cp "build/${{ matrix.file }}" "dist/${PROJECT_SLUG}-${{ needs.meta.outputs.tag }}-${{ matrix.asset }}.apk"
       - uses: actions/upload-artifact@v4
         with:
           name: dist-${{ matrix.asset }}
@@ -157,13 +254,13 @@ jobs:
           if-no-files-found: error
 
   # ---------------------------------------------------------------------------
-  # iOS is opt-in: set the repository variable BUILD_IOS=true and APPLE_TEAM_ID=<your team id>
-  # (Settings > Secrets and variables > Actions > Variables). It exports an Xcode project, because
-  # an installable .ipa needs your Apple Developer signing certificate and provisioning profile.
+  # iOS is opt-in: set repository variables BUILD_IOS=true and APPLE_TEAM_ID=<your team id>
+  # (Settings > Secrets and variables > Actions > Variables). Exports an Xcode project, because an
+  # installable .ipa needs your Apple Developer certificate and provisioning profile.
   ios:
     name: iOS (Xcode project)
-    if: ${{ github.event_name != 'pull_request' && vars.BUILD_IOS == 'true' }}
-    needs: test
+    needs: [meta, test]
+    if: ${{ needs.meta.outputs.build == 'true' && vars.BUILD_IOS == 'true' }}
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -172,6 +269,8 @@ jobs:
           version: ${{ env.GODOT_VERSION }}
           use-dotnet: false
           include-templates: true
+      - name: Stamp version ${{ needs.meta.outputs.version }}
+        run: python3 tools/sync_version.py
       - name: Export Xcode project
         env:
           APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
@@ -181,8 +280,7 @@ jobs:
           godot --headless --import || true
           godot --headless --export-release "iOS" build/ios/AnimasEmber.xcodeproj
           test -d build/ios/AnimasEmber.xcodeproj
-          VER="v$(tr -d '[:space:]' < VERSION)"
-          (cd build && zip -r -9 "../dist/${PROJECT_SLUG}-${VER}-ios-xcode-project.zip" ios)
+          (cd build && zip -r -9 "../dist/${PROJECT_SLUG}-${{ needs.meta.outputs.tag }}-ios-xcode-project.zip" ios)
       - uses: actions/upload-artifact@v4
         with:
           name: dist-ios
@@ -191,28 +289,29 @@ jobs:
 
   # ---------------------------------------------------------------------------
   release:
-    name: Publish release
-    if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' && !cancelled() && !contains(needs.*.result, 'failure') }}
-    needs: [desktop, android, ios]
+    name: Publish ${{ needs.meta.outputs.tag }}
+    needs: [meta, desktop, android, ios]
+    if: ${{ needs.meta.outputs.release == 'true' && !cancelled() && !contains(needs.*.result, 'failure') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-      - name: Read version
-        id: ver
-        run: echo "tag=v$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@v4
         with:
           pattern: dist-*
           path: release
           merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: notes
       - name: Checksums
         run: cd release && sha256sum * > SHA256SUMS.txt && ls -la
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.ver.outputs.tag }}
-          name: "Animas: Ember ${{ steps.ver.outputs.tag }}"
-          body_path: RELEASE.md
+          tag_name: ${{ needs.meta.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ needs.meta.outputs.title }}
+          body_path: notes/NOTES.md
+          prerelease: ${{ needs.meta.outputs.prerelease == 'true' }}
           files: release/*
-          prerelease: ${{ startsWith(steps.ver.outputs.tag, 'v0.') }}

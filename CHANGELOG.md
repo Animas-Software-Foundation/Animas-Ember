@@ -10,6 +10,8 @@ First tagged release: the overworld foundation.
 - Project renamed to **Animas: Ember**
 
 ### Added
+- Project website in `docs/` (landing page, playable browser demo using the game's own font, live download links) deployed to GitHub Pages by `pages.yml`
+- `tools/render_screenshot.py`, which renders the README and social-card screenshot from the game's own assets
 - *Animas Pixel*, a custom bitmap font drawn from scratch (`tools/generate_font.py`), used for all in-game text
 - On-screen touch controls for phones and tablets, and a project icon
 - Export presets for Windows (x86_64, x86_32, arm64), Linux (x86_64, x86_32, arm64, arm32), macOS (universal), Android (arm64, arm32, x86_64, x86, universal), and iOS
@@ -26,4 +28,4 @@ First tagged release: the overworld foundation.
 - Browser demo (`docs/index.html`) for GitHub Pages
 - Developer documentation in `docs/DEVELOPING.md`
 
-[0.0.1]: https://github.com/pixel-pulse-games/animas-ember/releases/tag/v0.0.1
+[0.0.1]: https://github.com/pixel-pulse-games/Animas-Ember/releases/tag/v0.0.1

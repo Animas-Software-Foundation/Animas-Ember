@@ -13,3 +13,9 @@ mono_crash.*.json
 Thumbs.db
 .vscode/
 .idea/
+
+# Godot export output (iOS export dropped these in the project root)
+/Game/
+/Game.pck
+/PrivacyInfo.xcprivacy
+*.xcodeproj/

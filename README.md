@@ -1,19 +1,19 @@
 # Animas: Ember
 
 ![Version](https://img.shields.io/badge/version-v0.0.1-blue)
-![Godot](https://img.shields.io/badge/Godot-4.3%2B-478cbf?logo=godotengine&logoColor=white)
+![Godot](https://img.shields.io/badge/Godot-4.7%2B-478cbf?logo=godotengine&logoColor=white)
 ![Status](https://img.shields.io/badge/status-pre--alpha-orange)
 
 **A creature-collecting, turn-based RPG built in Godot 4, in the spirit of the classic handheld monster-catching games.** Made by [Pixel Pulse Games](https://github.com/pixel-pulse-games).
 
-![Tileset preview](docs/tiles_preview.png)
+[![Animas: Ember screenshot](docs/screenshot.png)](https://pixel-pulse-games.github.io/Animas-Ember/)
 
 > **Pre-alpha.** v0.0.1 is the walking-around foundation: a small town you can explore. Creatures, battles, and catching are on the roadmap below.
 
 ## Play it
 
-- **Download a build:** grab your platform from the [latest release](https://github.com/pixel-pulse-games/animas-ember/releases/latest) (see [Downloads](#downloads)).
-- **In your browser (no install):** <https://pixel-pulse-games.github.io/animas-ember/>. Works on phones with an on-screen D-pad.
+- **Download a build:** grab your platform from the [latest release](https://github.com/pixel-pulse-games/Animas-Ember/releases/latest) (see [Downloads](#downloads)).
+- **In your browser (no install):** <https://pixel-pulse-games.github.io/Animas-Ember/>, the project website with a playable starter town. Works on phones with an on-screen D-pad.
 - **In Godot:** see [Run the project](#run-the-project) below.
 
 ## Downloads
@@ -47,10 +47,10 @@ Not sure which one? Windows, Mac, and most modern Android phones want the 64-bit
 
 ## Run the project
 
-**Requirements:** [Godot 4.3 or newer](https://godotengine.org/download) (the standard build, not .NET).
+**Requirements:** [Godot 4.7 or newer](https://godotengine.org/download) (the standard build, not .NET).
 
 ```bash
-git clone https://github.com/pixel-pulse-games/animas-ember.git
+git clone https://github.com/pixel-pulse-games/Animas-Ember.git
 ```
 
 Open Godot, click **Import**, choose `project.godot`, then press **F5**.
@@ -75,7 +75,7 @@ On phones and tablets an on-screen D-pad and **A** button appear. The browser de
 
 ## Contributing
 
-Ideas, bug reports, and pull requests are welcome. Open an [issue](https://github.com/pixel-pulse-games/animas-ember/issues) first for anything big. Setup, project structure, and how to add maps, NPCs, and tiles are in [docs/DEVELOPING.md](docs/DEVELOPING.md).
+Ideas, bug reports, and pull requests are welcome. Open an [issue](https://github.com/pixel-pulse-games/Animas-Ember/issues) first for anything big. Setup, project structure, and how to add maps, NPCs, and tiles are in [docs/DEVELOPING.md](docs/DEVELOPING.md).
 
 1. Fork the repo and create a branch: `git checkout -b feature/my-feature`
 2. Follow the [GDScript style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html) (tabs, `snake_case`, type hints).

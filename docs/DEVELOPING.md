@@ -4,7 +4,7 @@ Notes for contributors. For the project overview see the [README](../README.md).
 
 ## Running and testing
 
-- **Play:** open `project.godot` in Godot 4.3+ and press **F5** (the main scene is `scenes/maps/town.tscn`).
+- **Play:** open `project.godot` in Godot 4.7+ and press **F5** (the main scene is `scenes/maps/town.tscn`).
 - **Smoke test (headless, also good for CI):**
 
   ```bash
@@ -13,7 +13,7 @@ Notes for contributors. For the project overview see the [README](../README.md).
   ```
 
   It loads the town, walks through the door, bumps a wall, and talks to an NPC, then prints `ALL PASSED` or the failures (non-zero exit code).
-- **Browser demo:** `docs/index.html` is a standalone JavaScript port of the same maps and mechanics. It is served by GitHub Pages and is not part of the Godot build.
+- **Website and browser demo:** see [Website](#website) below.
 
 ## Project structure
 
@@ -46,8 +46,21 @@ tools/
   generate_tiles.py       Regenerates the placeholder tileset
   generate_font.py        Regenerates the Animas Pixel font
   smoke_test.gd           Headless smoke test
-docs/                     Developer docs, tile preview, browser demo (index.html)
+docs/                     Website (index.html, style.css, game.js, assets/), screenshot, developer docs
 ```
+
+## Website
+
+The project site lives in `docs/` and is deployed to GitHub Pages by `.github/workflows/pages.yml`. **One-time setup:** Settings > Pages > Build and deployment > Source: *GitHub Actions*. After that, every push to `main` that touches `docs/` redeploys it.
+
+| File | What it is |
+|------|------------|
+| `index.html`, `style.css` | The landing page. Light and dark themes follow the visitor's system setting. |
+| `game.js` | A JavaScript port of the starter town (same tileset, same *Animas Pixel* font, same movement rules). It is **not** the Godot build, so if you change `scenes/maps/*.gd` or the dialogue, update the `MAPS` data in `game.js` too. |
+| `assets/` | Copies of `tiles.png`, `animas_pixel.png`, and `icon.png` used by the page. Re-copy them if you repaint the originals. |
+| `screenshot.png` | README and social-card image. Regenerate with `python3 tools/render_screenshot.py`. |
+
+The download buttons read the newest GitHub Release in the visitor's browser, so new builds show up with no site change. Preview locally with `python3 -m http.server -d docs 8000` and open http://localhost:8000.
 
 ## Building and releasing
 
@@ -81,7 +94,7 @@ iOS needs an Apple Developer account, so it is off by default. Set the repositor
 
 ### Exporting locally
 
-Install the 4.3 export templates in the editor (**Editor > Manage Export Templates**), then:
+Install the 4.7 export templates in the editor (**Editor > Manage Export Templates**), then:
 
 ```bash
 godot --headless --path . --import
