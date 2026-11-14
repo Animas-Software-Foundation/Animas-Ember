@@ -1,0 +1,74 @@
+# Pixel Pulse RPG
+
+![Version](https://img.shields.io/badge/version-v0.0.1-blue)
+![Godot](https://img.shields.io/badge/Godot-4.3%2B-478cbf?logo=godotengine&logoColor=white)
+![Status](https://img.shields.io/badge/status-pre--alpha-orange)
+
+**A creature-collecting, turn-based RPG built in Godot 4, in the spirit of the classic handheld monster-catching games.** Made by [Pixel Pulse Games](https://github.com/pixel-pulse-games).
+
+![Tileset preview](docs/tiles_preview.png)
+
+> **Pre-alpha.** v0.0.1 is the walking-around foundation: a small town you can explore. Creatures, battles, and catching are on the roadmap below.
+
+## Play it
+
+- **In your browser (no install):** <https://pixel-pulse-games.github.io/pixel-pulse-rpg/>. Works on phones with an on-screen D-pad.
+- **In Godot:** see [Run the project](#run-the-project) below.
+
+## What's in v0.0.1
+
+- Grid-based, tile-by-tile movement. Tap a direction to turn, hold it to walk.
+- A starter town and a house, with door warps and fade transitions
+- Talkable NPCs and signs with a typewriter dialogue box
+- Tall-grass tiles that trigger placeholder encounters
+- An original 16x16 tileset with collision pre-configured
+- Pixel-perfect 240x160 viewport (GBA resolution) with integer scaling
+- A headless smoke test for the core gameplay loop
+
+## Run the project
+
+**Requirements:** [Godot 4.3 or newer](https://godotengine.org/download) (the standard build, not .NET).
+
+```bash
+git clone https://github.com/pixel-pulse-games/pixel-pulse-rpg.git
+```
+
+Open Godot, click **Import**, choose `project.godot`, then press **F5**.
+
+## Controls
+
+| Action                  | Keys                  |
+|-------------------------|-----------------------|
+| Move / turn             | Arrow keys or D-pad   |
+| Talk / read / advance   | Enter or Space        |
+
+The browser demo also accepts WASD and Z.
+
+## Roadmap
+
+- [x] **v0.0.1:** grid movement, collision, warps, NPCs, dialogue, tileset
+- [ ] **Phase 2:** trainers with line-of-sight, real wild encounters in tall grass
+- [ ] **Phase 3:** creature and move data, type chart
+- [ ] **Phase 4:** turn-based battles (damage formula, type effectiveness, status effects, enemy AI)
+- [ ] **Phase 5:** catching, party, bag, XP, leveling, evolution
+- [ ] **Phase 6:** gym leader, save/load, menus, music, polish
+
+## Contributing
+
+Ideas, bug reports, and pull requests are welcome. Open an [issue](https://github.com/pixel-pulse-games/pixel-pulse-rpg/issues) first for anything big. Setup, project structure, and how to add maps, NPCs, and tiles are in [docs/DEVELOPING.md](docs/DEVELOPING.md).
+
+1. Fork the repo and create a branch: `git checkout -b feature/my-feature`
+2. Follow the [GDScript style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html) (tabs, `snake_case`, type hints).
+3. Run the smoke test (`godot --headless --path . -s tools/smoke_test.gd`) before opening a PR.
+
+## Content and legal
+
+Everything in this project (creatures, characters, names, maps, music, art) must be **original** or properly licensed. Do not contribute Nintendo, Game Freak, or The Pokémon Company assets, ripped sprites or music, or ROM-derived data. Reimplementing game *mechanics* is fine; reusing someone else's IP is not. This is an independent fan-inspired project and is not affiliated with or endorsed by Nintendo, Game Freak, or The Pokémon Company.
+
+## License
+
+No license has been chosen yet, so all rights are reserved by Pixel Pulse Games until one is added.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
