@@ -1,10 +1,9 @@
 name: Build & Release
 
-# Pushing a tag like v0.0.1 builds every platform and publishes a GitHub Release.
-# "Run workflow" (workflow_dispatch) builds everything and keeps the files as artifacts only.
+# Every push to main builds all platforms and publishes/updates a GitHub Release automatically.
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -13,7 +12,7 @@ permissions:
   contents: read
 
 env:
-  GODOT_VERSION: "4.3.0"          # must match config/features in project.godot
+  GODOT_VERSION: "4.7.0"          # must match config/features in project.godot
   PROJECT_SLUG: animas-ember
 
 jobs:
@@ -69,8 +68,8 @@ jobs:
           test -s "build/${{ matrix.file }}"
       - name: Package
         run: |
-          REF="${GITHUB_REF_NAME//\//-}"
-          NAME="${PROJECT_SLUG}-${REF}-${{ matrix.asset }}"
+          VER="v$(tr -d '[:space:]' < VERSION)"
+          NAME="${PROJECT_SLUG}-${VER}-${{ matrix.asset }}"
           cd build
           case "${{ matrix.pack }}" in
             zip)  zip -9 "../dist/${NAME}.zip" "${{ matrix.file }}" ;;
@@ -149,8 +148,8 @@ jobs:
           godot --headless --import || true
           godot --headless --export-release "${{ matrix.preset }}" "build/${{ matrix.file }}"
           test -s "build/${{ matrix.file }}"
-          REF="${GITHUB_REF_NAME//\//-}"
-          cp "build/${{ matrix.file }}" "dist/${PROJECT_SLUG}-${REF}-${{ matrix.asset }}.apk"
+          VER="v$(tr -d '[:space:]' < VERSION)"
+          cp "build/${{ matrix.file }}" "dist/${PROJECT_SLUG}-${VER}-${{ matrix.asset }}.apk"
       - uses: actions/upload-artifact@v4
         with:
           name: dist-${{ matrix.asset }}
@@ -182,8 +181,8 @@ jobs:
           godot --headless --import || true
           godot --headless --export-release "iOS" build/ios/AnimasEmber.xcodeproj
           test -d build/ios/AnimasEmber.xcodeproj
-          REF="${GITHUB_REF_NAME//\//-}"
-          (cd build && zip -r -9 "../dist/${PROJECT_SLUG}-${REF}-ios-xcode-project.zip" ios)
+          VER="v$(tr -d '[:space:]' < VERSION)"
+          (cd build && zip -r -9 "../dist/${PROJECT_SLUG}-${VER}-ios-xcode-project.zip" ios)
       - uses: actions/upload-artifact@v4
         with:
           name: dist-ios
@@ -193,12 +192,16 @@ jobs:
   # ---------------------------------------------------------------------------
   release:
     name: Publish release
-    if: ${{ startsWith(github.ref, 'refs/tags/v') && !cancelled() && !contains(needs.*.result, 'failure') }}
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' && !cancelled() && !contains(needs.*.result, 'failure') }}
     needs: [desktop, android, ios]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+      - name: Read version
+        id: ver
+        run: echo "tag=v$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@v4
         with:
           pattern: dist-*
@@ -208,7 +211,8 @@ jobs:
         run: cd release && sha256sum * > SHA256SUMS.txt && ls -la
       - uses: softprops/action-gh-release@v2
         with:
-          name: "Animas: Ember ${{ github.ref_name }}"
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: "Animas: Ember ${{ steps.ver.outputs.tag }}"
           files: release/*
           generate_release_notes: true
-          prerelease: ${{ startsWith(github.ref_name, 'v0.') }}
+          prerelease: ${{ startsWith(steps.ver.outputs.tag, 'v0.') }}
