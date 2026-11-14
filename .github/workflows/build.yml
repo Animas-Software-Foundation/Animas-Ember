@@ -1,0 +1,214 @@
+name: Build & Release
+
+# Pushing a tag like v0.0.1 builds every platform and publishes a GitHub Release.
+# "Run workflow" (workflow_dispatch) builds everything and keeps the files as artifacts only.
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: "4.3.0"          # must match config/features in project.godot
+  PROJECT_SLUG: animas-ember
+
+jobs:
+  # ---------------------------------------------------------------------------
+  test:
+    name: Smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          use-dotnet: false
+          include-templates: false
+      - name: Import project
+        run: godot --headless --import || true   # first import prints harmless errors
+      - name: Run smoke test
+        run: godot --headless -s tools/smoke_test.gd
+
+  # ---------------------------------------------------------------------------
+  desktop:
+    name: ${{ matrix.preset }}
+    if: github.event_name != 'pull_request'
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows
+          - { preset: "Windows x86_64", file: "AnimasEmber-windows-x86_64.exe", pack: zip, asset: windows-x86_64 }
+          - { preset: "Windows x86_32", file: "AnimasEmber-windows-x86_32.exe", pack: zip, asset: windows-x86_32 }
+          - { preset: "Windows arm64",  file: "AnimasEmber-windows-arm64.exe",  pack: zip, asset: windows-arm64 }
+          # Linux
+          - { preset: "Linux x86_64", file: "AnimasEmber-linux-x86_64.x86_64", pack: tar, asset: linux-x86_64 }
+          - { preset: "Linux x86_32", file: "AnimasEmber-linux-x86_32.x86_32", pack: tar, asset: linux-x86_32 }
+          - { preset: "Linux arm64",  file: "AnimasEmber-linux-arm64.arm64",   pack: tar, asset: linux-arm64 }
+          - { preset: "Linux arm32",  file: "AnimasEmber-linux-arm32.arm32",   pack: tar, asset: linux-arm32 }
+          # macOS (one universal build: Intel x86_64 + Apple Silicon arm64)
+          - { preset: "macOS", file: "AnimasEmber-macos-universal.zip", pack: copy, asset: macos-universal }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          use-dotnet: false
+          include-templates: true
+      - name: Export
+        run: |
+          mkdir -p build dist
+          godot --headless --import || true
+          godot --headless --export-release "${{ matrix.preset }}" "build/${{ matrix.file }}"
+          test -s "build/${{ matrix.file }}"
+      - name: Package
+        run: |
+          REF="${GITHUB_REF_NAME//\//-}"
+          NAME="${PROJECT_SLUG}-${REF}-${{ matrix.asset }}"
+          cd build
+          case "${{ matrix.pack }}" in
+            zip)  zip -9 "../dist/${NAME}.zip" "${{ matrix.file }}" ;;
+            tar)  chmod +x "${{ matrix.file }}"; tar -czf "../dist/${NAME}.tar.gz" "${{ matrix.file }}" ;;
+            copy) cp "${{ matrix.file }}" "../dist/${NAME}.zip" ;;
+          esac
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.asset }}
+          path: dist/*
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  android:
+    name: Android ${{ matrix.asset }}
+    if: github.event_name != 'pull_request'
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { preset: "Android arm64",     file: "AnimasEmber-android-arm64.apk",     asset: android-arm64 }
+          - { preset: "Android arm32",     file: "AnimasEmber-android-arm32.apk",     asset: android-arm32 }
+          - { preset: "Android x86_64",    file: "AnimasEmber-android-x86_64.apk",    asset: android-x86_64 }
+          - { preset: "Android x86",       file: "AnimasEmber-android-x86.apk",       asset: android-x86 }
+          - { preset: "Android universal", file: "AnimasEmber-android-universal.apk", asset: android-universal }
+    env:
+      KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools build-tools;34.0.0 platforms;android-34 cmdline-tools;latest cmake;3.10.2.4988404 ndk;23.2.8568313"
+      - uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          use-dotnet: false
+          include-templates: true
+      - name: Point Godot at the Android SDK and JDK
+        run: |
+          mkdir -p ~/.config/godot
+          cat > ~/.config/godot/editor_settings-4.3.tres <<SETTINGS
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "${ANDROID_HOME}"
+          export/android/java_sdk_path = "${JAVA_HOME}"
+          SETTINGS
+      - name: Prepare signing keystore
+        run: |
+          KS="$RUNNER_TEMP/release.keystore"
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$KS"
+            USER="$KEY_ALIAS"; PASS="$KEY_PASSWORD"
+            echo "Using the release keystore from repository secrets."
+          else
+            # No secrets configured: sign with a throwaway key so the APK still installs.
+            # Updates will NOT install over builds signed with a different key; add the secrets for stable releases.
+            USER="animas"; PASS="android-ci"
+            keytool -genkeypair -v -keystore "$KS" -alias "$USER" -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$PASS" -keypass "$PASS" -dname "CN=Animas Ember CI, O=Pixel Pulse Games"
+          fi
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=$KS"   >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=$USER" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=$PASS" >> "$GITHUB_ENV"
+      - name: Export APK
+        run: |
+          mkdir -p build dist
+          godot --headless --import || true
+          godot --headless --export-release "${{ matrix.preset }}" "build/${{ matrix.file }}"
+          test -s "build/${{ matrix.file }}"
+          REF="${GITHUB_REF_NAME//\//-}"
+          cp "build/${{ matrix.file }}" "dist/${PROJECT_SLUG}-${REF}-${{ matrix.asset }}.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.asset }}
+          path: dist/*
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # iOS is opt-in: set the repository variable BUILD_IOS=true and APPLE_TEAM_ID=<your team id>
+  # (Settings > Secrets and variables > Actions > Variables). It exports an Xcode project, because
+  # an installable .ipa needs your Apple Developer signing certificate and provisioning profile.
+  ios:
+    name: iOS (Xcode project)
+    if: ${{ github.event_name != 'pull_request' && vars.BUILD_IOS == 'true' }}
+    needs: test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          use-dotnet: false
+          include-templates: true
+      - name: Export Xcode project
+        env:
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+        run: |
+          sed -i '' "s/0000000000/${APPLE_TEAM_ID:-0000000000}/" export_presets.cfg
+          mkdir -p build/ios dist
+          godot --headless --import || true
+          godot --headless --export-release "iOS" build/ios/AnimasEmber.xcodeproj
+          test -d build/ios/AnimasEmber.xcodeproj
+          REF="${GITHUB_REF_NAME//\//-}"
+          (cd build && zip -r -9 "../dist/${PROJECT_SLUG}-${REF}-ios-xcode-project.zip" ios)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-ios
+          path: dist/*
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  release:
+    name: Publish release
+    if: ${{ startsWith(github.ref, 'refs/tags/v') && !cancelled() && !contains(needs.*.result, 'failure') }}
+    needs: [desktop, android, ios]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: dist-*
+          path: release
+          merge-multiple: true
+      - name: Checksums
+        run: cd release && sha256sum * > SHA256SUMS.txt && ls -la
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: "Animas: Ember ${{ github.ref_name }}"
+          files: release/*
+          generate_release_notes: true
+          prerelease: ${{ startsWith(github.ref_name, 'v0.') }}

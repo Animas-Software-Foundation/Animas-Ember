@@ -1,0 +1,17 @@
+[remap]
+
+importer="font_data_bmfont"
+type="FontFile"
+uid="uid://b3i1wda6fupbh"
+path="res://.godot/imported/animas_pixel.fnt-7c3c3df7bc4cbeb095f1bc1269feb445.fontdata"
+
+[deps]
+
+source_file="res://assets/fonts/animas_pixel.fnt"
+dest_files=["res://.godot/imported/animas_pixel.fnt-7c3c3df7bc4cbeb095f1bc1269feb445.fontdata"]
+
+[params]
+
+fallbacks=[]
+compress=true
+scaling_mode=2

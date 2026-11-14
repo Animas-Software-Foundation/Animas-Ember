@@ -1,4 +1,4 @@
-# Pixel Pulse RPG
+# Animas: Ember
 
 ![Version](https://img.shields.io/badge/version-v0.0.1-blue)
 ![Godot](https://img.shields.io/badge/Godot-4.3%2B-478cbf?logo=godotengine&logoColor=white)
@@ -12,8 +12,25 @@
 
 ## Play it
 
-- **In your browser (no install):** <https://pixel-pulse-games.github.io/pixel-pulse-rpg/>. Works on phones with an on-screen D-pad.
+- **Download a build:** grab your platform from the [latest release](https://github.com/pixel-pulse-games/animas-ember/releases/latest) (see [Downloads](#downloads)).
+- **In your browser (no install):** <https://pixel-pulse-games.github.io/animas-ember/>. Works on phones with an on-screen D-pad.
 - **In Godot:** see [Run the project](#run-the-project) below.
+
+## Downloads
+
+Every tagged release is built automatically for these platforms:
+
+| Platform | Architectures | Download |
+|----------|---------------|----------|
+| Windows  | x86_64, x86_32 (32-bit), arm64 | `.zip` with a single `.exe` |
+| Linux    | x86_64, x86_32 (32-bit), arm64, arm32 | `.tar.gz` (binary is already executable) |
+| macOS    | Universal: Intel (x86_64) + Apple Silicon (arm64) | `.zip` containing the `.app` |
+| Android  | arm64, arm32, x86_64, x86, or one universal APK | `.apk` |
+| iOS      | arm64 | Xcode project (build it yourself with your Apple Developer account) |
+
+Not sure which one? Windows, Mac, and most modern Android phones want the 64-bit builds (x86_64 / arm64 / universal). A `SHA256SUMS.txt` is attached to every release.
+
+**First-run warnings are expected for now.** The builds are not yet signed with a paid certificate: on Windows choose *More info > Run anyway* in SmartScreen; on macOS right-click the app and choose *Open* (or use *System Settings > Privacy & Security > Open Anyway*); on Android allow installing from your browser or file manager.
 
 ## What's in v0.0.1
 
@@ -22,6 +39,9 @@
 - Talkable NPCs and signs with a typewriter dialogue box
 - Tall-grass tiles that trigger placeholder encounters
 - An original 16x16 tileset with collision pre-configured
+- A custom hand-drawn bitmap font, *Animas Pixel*, that stays crisp at any window size
+- On-screen touch controls on phones and tablets
+- Automated builds for Windows, Linux, macOS, Android (and iOS) on every release
 - Pixel-perfect 240x160 viewport (GBA resolution) with integer scaling
 - A headless smoke test for the core gameplay loop
 
@@ -30,7 +50,7 @@
 **Requirements:** [Godot 4.3 or newer](https://godotengine.org/download) (the standard build, not .NET).
 
 ```bash
-git clone https://github.com/pixel-pulse-games/pixel-pulse-rpg.git
+git clone https://github.com/pixel-pulse-games/animas-ember.git
 ```
 
 Open Godot, click **Import**, choose `project.godot`, then press **F5**.
@@ -42,7 +62,7 @@ Open Godot, click **Import**, choose `project.godot`, then press **F5**.
 | Move / turn             | Arrow keys or D-pad   |
 | Talk / read / advance   | Enter or Space        |
 
-The browser demo also accepts WASD and Z.
+On phones and tablets an on-screen D-pad and **A** button appear. The browser demo also accepts WASD and Z.
 
 ## Roadmap
 
@@ -55,11 +75,11 @@ The browser demo also accepts WASD and Z.
 
 ## Contributing
 
-Ideas, bug reports, and pull requests are welcome. Open an [issue](https://github.com/pixel-pulse-games/pixel-pulse-rpg/issues) first for anything big. Setup, project structure, and how to add maps, NPCs, and tiles are in [docs/DEVELOPING.md](docs/DEVELOPING.md).
+Ideas, bug reports, and pull requests are welcome. Open an [issue](https://github.com/pixel-pulse-games/animas-ember/issues) first for anything big. Setup, project structure, and how to add maps, NPCs, and tiles are in [docs/DEVELOPING.md](docs/DEVELOPING.md).
 
 1. Fork the repo and create a branch: `git checkout -b feature/my-feature`
 2. Follow the [GDScript style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html) (tabs, `snake_case`, type hints).
-3. Run the smoke test (`godot --headless --path . -s tools/smoke_test.gd`) before opening a PR.
+3. Run the smoke test (`godot --headless --path . -s tools/smoke_test.gd`) before opening a PR. Release and build details are in [docs/DEVELOPING.md](docs/DEVELOPING.md#building-and-releasing).
 
 ## Content and legal
 

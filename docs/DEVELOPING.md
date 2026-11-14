@@ -1,4 +1,4 @@
-# Developing Pixel Pulse RPG
+# Developing Animas: Ember
 
 Notes for contributors. For the project overview see the [README](../README.md).
 
@@ -28,6 +28,7 @@ scripts/
     game_state.gd         Input lock, spawn point, story flags
     scene_transition.gd   Fade out -> change scene -> fade in
     dialogue.gd           Typewriter text box, built in code
+    touch_controls.gd     On-screen D-pad + A button (touch devices only)
   overworld/
     player.gd             Grid movement, interaction, warp checks
     npc.gd                Talkable StaticBody2D
@@ -35,12 +36,65 @@ scripts/
     ascii_map.gd          Builds a map from ASCII rows at runtime
     placeholder_sprite.gd Placeholder character art
     facing.gd             Direction enum + helpers
-assets/tilesets/          tiles.png + tiles.tres
+assets/
+  tilesets/               tiles.png + tiles.tres
+  fonts/                  animas_pixel.png + .fnt (bitmap font)
+export_presets.cfg        Export presets for every platform (no secrets inside)
+.github/workflows/
+  build.yml               Test, build all platforms, publish the release
 tools/
   generate_tiles.py       Regenerates the placeholder tileset
+  generate_font.py        Regenerates the Animas Pixel font
   smoke_test.gd           Headless smoke test
 docs/                     Developer docs, tile preview, browser demo (index.html)
 ```
+
+## Building and releasing
+
+### Cut a release
+
+```bash
+git tag v0.0.2 && git push origin v0.0.2
+```
+
+The **Build & Release** workflow (`.github/workflows/build.yml`) runs the smoke test, exports every platform, and attaches the files plus `SHA256SUMS.txt` to a GitHub Release (marked pre-release while the version starts with `v0.`). Use **Actions > Build & Release > Run workflow** to build everything without releasing; the files are kept as workflow artifacts.
+
+| Platform | Presets | Notes |
+|----------|---------|-------|
+| Windows  | `Windows x86_64`, `x86_32`, `arm64` | Single `.exe` with the `.pck` embedded |
+| Linux    | `Linux x86_64`, `x86_32`, `arm64`, `arm32` | Single binary with the `.pck` embedded |
+| macOS    | `macOS` | Universal (x86_64 + arm64), ad-hoc signed, not notarized |
+| Android  | `Android arm64`, `arm32`, `x86_64`, `x86`, `universal` | APKs, one per CPU plus a universal one |
+| iOS      | `iOS` | Opt-in, exports an Xcode project (see below) |
+
+### Android signing (recommended before shipping)
+
+Without secrets, CI signs APKs with a throwaway key so they still install, but **updates will not install over builds signed with a different key**. For stable releases, create a keystore once and add these repository secrets (Settings > Secrets and variables > Actions):
+
+- `ANDROID_KEYSTORE_BASE64`: `base64 -w0 my-release.keystore`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD` (used as both the store and key password)
+
+### iOS
+
+iOS needs an Apple Developer account, so it is off by default. Set the repository **variables** `BUILD_IOS=true` and `APPLE_TEAM_ID=<your team id>`; the workflow then attaches an Xcode project (`...-ios-xcode-project.zip`). Open it in Xcode, set your signing team and provisioning profile, and archive. Producing an installable `.ipa` directly in CI would additionally need your signing certificate and profile stored as secrets.
+
+### Exporting locally
+
+Install the 4.3 export templates in the editor (**Editor > Manage Export Templates**), then:
+
+```bash
+godot --headless --path . --import
+godot --headless --path . --export-release "Linux x86_64" build/AnimasEmber-linux-x86_64.x86_64
+```
+
+Preset names are in `export_presets.cfg`. Android additionally needs the Android SDK and JDK 17 configured in **Editor Settings > Export > Android**.
+
+## Font
+
+The game uses **Animas Pixel**, a bitmap font drawn from scratch: 5 px wide, 7 px caps, 5 px x-height, 2 px descenders, proportional spacing, ASCII only. Glyphs are defined as ASCII-art rows in `tools/generate_font.py`; run `python3 tools/generate_font.py` to rewrite `assets/fonts/animas_pixel.png`, `.fnt`, and `docs/font_preview.png`. Assign it to a control with `add_theme_font_override("font", load("res://assets/fonts/animas_pixel.fnt"))` and always use its native size (`font_size = 9`) so it stays crisp; `Dialogue` and the touch buttons already do both.
+
+![Animas Pixel](font_preview.png)
 
 ## How it works
 

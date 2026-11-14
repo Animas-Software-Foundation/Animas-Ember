@@ -6,7 +6,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 First tagged release: the overworld foundation.
 
+### Changed
+- Project renamed to **Animas: Ember**
+
 ### Added
+- *Animas Pixel*, a custom bitmap font drawn from scratch (`tools/generate_font.py`), used for all in-game text
+- On-screen touch controls for phones and tablets, and a project icon
+- Export presets for Windows (x86_64, x86_32, arm64), Linux (x86_64, x86_32, arm64, arm32), macOS (universal), Android (arm64, arm32, x86_64, x86, universal), and iOS
+- GitHub Actions workflow (`build.yml`) that tests, builds every platform, and publishes releases on version tags
 - Grid-based player movement (tap to turn, hold to walk) with tile collision via `RayCast2D`
 - `Warp` markers and a fade `SceneTransition` for moving between maps
 - Talkable `NPC` nodes and a typewriter `Dialogue` box (including sign triggers)
@@ -19,4 +26,4 @@ First tagged release: the overworld foundation.
 - Browser demo (`docs/index.html`) for GitHub Pages
 - Developer documentation in `docs/DEVELOPING.md`
 
-[0.0.1]: https://github.com/pixel-pulse-games/pixel-pulse-rpg/releases/tag/v0.0.1
+[0.0.1]: https://github.com/pixel-pulse-games/animas-ember/releases/tag/v0.0.1

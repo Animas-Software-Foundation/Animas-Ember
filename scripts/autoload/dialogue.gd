@@ -4,6 +4,8 @@ extends CanvasLayer
 
 signal _advance
 
+const FONT_PATH := "res://assets/fonts/animas_pixel.fnt"
+const FONT_SIZE := 9  ## native size of Animas Pixel; keep it so the text stays crisp
 const CHARS_PER_SECOND := 45.0
 ## Short delay before returning control, so the key press that closed the
 ## box can't immediately re-trigger an interaction.
@@ -41,7 +43,9 @@ func _ready() -> void:
 	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_label.add_theme_color_override("font_color", Color("202020"))
-	_label.add_theme_font_size_override("font_size", 10)
+	_label.add_theme_font_override("font", load(FONT_PATH))
+	_label.add_theme_font_size_override("font_size", FONT_SIZE)
+	_label.add_theme_constant_override("line_spacing", 0)
 	_panel.add_child(_label)
 
 

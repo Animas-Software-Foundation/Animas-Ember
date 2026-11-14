@@ -3,8 +3,9 @@ config_version=5
 
 [application]
 
-config/name="Pixel Pulse RPG"
+config/name="Animas: Ember"
 config/version="0.0.1"
+config/icon="res://icon.png"
 run/main_scene="res://scenes/maps/town.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 
@@ -13,6 +14,7 @@ config/features=PackedStringArray("4.3", "GL Compatibility")
 GameState="*res://scripts/autoload/game_state.gd"
 SceneTransition="*res://scripts/autoload/scene_transition.gd"
 Dialogue="*res://scripts/autoload/dialogue.gd"
+TouchControls="*res://scripts/autoload/touch_controls.gd"
 
 [display]
 
@@ -20,12 +22,14 @@ window/size/viewport_width=240
 window/size/viewport_height=160
 window/size/window_width_override=960
 window/size/window_height_override=640
+window/handheld/orientation=0
 window/stretch/mode="viewport"
 window/stretch/scale_mode="integer"
 
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0
+textures/vram_compression/import_etc2_astc=true
 environment/defaults/default_clear_color=Color(0, 0, 0, 1)
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"

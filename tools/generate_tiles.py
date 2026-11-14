@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generates the placeholder tileset for Pixel Pulse RPG.
+"""Generates the placeholder tileset for Animas: Ember.
 
 Outputs (relative to the project root):
   assets/tilesets/tiles.png    8x4 sheet of 16x16 tiles

@@ -22,7 +22,7 @@ func _setup() -> void:
 	])
 	start_tile = Vector2i(7, 6)
 	start_facing = Facing.Dir.UP
-	intro = ["Welcome to Pixel Pulse RPG!", "Arrows to walk, Enter to talk. Try the house!"]
+	intro = ["Welcome to Animas: Ember!", "Arrows to walk, Enter to talk. Try the house!"]
 	npc_defs = [
 		{tile = Vector2i(10, 6), lines = ["Nice day for an adventure!", "The path east leads to Route 1... someday."]},
 		{tile = Vector2i(9, 11), facing = Facing.Dir.RIGHT, body = Color("d0884a"), hair = Color("222222"),
