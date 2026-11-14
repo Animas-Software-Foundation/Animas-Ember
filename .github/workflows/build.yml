@@ -213,6 +213,6 @@ jobs:
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
           name: "Animas: Ember ${{ steps.ver.outputs.tag }}"
+          body_path: RELEASE.md
           files: release/*
-          generate_release_notes: true
           prerelease: ${{ startsWith(steps.ver.outputs.tag, 'v0.') }}
