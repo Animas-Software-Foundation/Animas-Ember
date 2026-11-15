@@ -20,3 +20,15 @@ func set_flag(flag_name: String, value := true) -> void:
 
 func get_flag(flag_name: String) -> bool:
 	return flags.get(flag_name, false)
+
+
+## Animas you have met (id -> true). Fills the Animadex.
+var seen: Dictionary = {}
+
+
+func mark_seen(anima_id: int) -> void:
+	seen[anima_id] = true
+
+
+func seen_count() -> int:
+	return seen.size()

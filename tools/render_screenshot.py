@@ -21,16 +21,18 @@ for y, row in enumerate(rows):
         gx, gy = legend[ch]
         img.alpha_composite(tiles.crop((gx * T, gy * T, gx * T + T, gy * T + T)), (x * T - cx, y * T - cy))
 
-def person(tx, ty, d, body, hair):
-    dr, ox, oy = ImageDraw.Draw(img), tx * T - cx, ty * T - cy
-    r = lambda x, y, w, h, c: dr.rectangle((ox + x, oy + y, ox + x + w - 1, oy + y + h - 1), fill=c)
-    r(4, 13, 3, 3, "#2a2a30"); r(9, 13, 3, 3, "#2a2a30"); r(3, 7, 10, 6, body)
-    r(4, 1, 8, 7, "#f0c8a0"); r(4, 0, 8, 7 if d == "up" else 3, hair)
-    if d == "down": r(5, 5, 1, 2, "#222"); r(10, 5, 1, 2, "#222")
-    if d == "left": r(5, 5, 1, 2, "#222")
-    if d == "right": r(10, 5, 1, 2, "#222")
+chars = Image.open(root / "assets/characters/characters.png").convert("RGBA")
+animas = Image.open(root / "assets/animas/animas.png").convert("RGBA")
+ROWS = {m: i for i, m in enumerate(re.findall(r'"id": "(\w+)"', (root / "scripts/data/character_roster.gd").read_text()))}
+DIR = {"down": 0, "up": 1, "left": 2, "right": 3}
 
-person(10, 6, "down", "#4a7bd0", "#3a2a1a"); person(9, 11, "right", "#d0884a", "#222222"); person(7, 6, "up", "#d04a4a", "#2a2a5a")
+
+def person(tx, ty, d, who):
+    c = (DIR[d] * 3) * 16
+    img.alpha_composite(chars.crop((c, ROWS[who] * 16, c + 16, ROWS[who] * 16 + 16)), (tx * T - cx, ty * T - cy))
+
+
+person(10, 6, "down", "kid_boy"); person(9, 11, "right", "gardener"); person(7, 6, "up", "hero")
 
 dr = ImageDraw.Draw(img)
 dr.rectangle((4, 108, 235, 155), fill="#ffffff", outline="#3b3b3b", width=2)
@@ -41,9 +43,30 @@ for ch in "Welcome to Animas: Ember!":
     if w: img.alpha_composite(ink.crop((gx, gy, gx + w, gy + 9)), (x, 116))
     x += adv
 x = 12
-for ch in "Walk with the arrow keys. Try the house!":
+for ch in "Arrows to walk. Try the house!":
     gx, gy, w, adv = M[ord(ch)]
     if w: img.alpha_composite(ink.crop((gx, gy, gx + w, gy + 9)), (x, 128))
     x += adv
 img.resize((W * 4, H * 4), Image.NEAREST).convert("RGB").save(root / "docs/screenshot.png", optimize=True)
 print("wrote docs/screenshot.png")
+
+
+# ---- encounter screen ----
+enc = Image.new("RGBA", (W, H), (29, 26, 43, 255))
+aid = 90  # Phoenyx
+sp = animas.crop((((aid - 1) % 16) * 32, ((aid - 1) // 16) * 32, ((aid - 1) % 16) * 32 + 32, ((aid - 1) // 16) * 32 + 32)).resize((96, 96), Image.NEAREST)
+enc.alpha_composite(sp, (72, 2))
+white = Image.new("RGBA", font.size, (255, 255, 255, 255)); white.putalpha(font.getchannel("A"))
+def text(im, src, msg, x, y):
+    for ch in msg:
+        gx, gy, w, adv = M[ord(ch)]
+        if w: im.alpha_composite(src.crop((gx, gy, gx + w, gy + 9)), (x, y))
+        x += adv
+title = "Phoenyx   Lv 5"
+text(enc, white, title, (W - sum(M[ord(c)][3] for c in title)) // 2, 98)
+d2 = ImageDraw.Draw(enc)
+d2.rectangle((4, 108, 235, 155), fill="#ffffff", outline="#3b3b3b", width=2)
+text(enc, ink, "A wild Phoenyx appeared!", 12, 116)
+text(enc, ink, "It is a Ember/Gale anima.", 12, 128)
+enc.resize((W * 4, H * 4), Image.NEAREST).convert("RGB").save(root / "docs/screenshot_encounter.png", optimize=True)
+print("wrote docs/screenshot_encounter.png")

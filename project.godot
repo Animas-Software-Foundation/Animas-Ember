@@ -15,7 +15,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="Animas: Ember"
-config/version="0.0.1"
+config/version="0.1.0"
 run/main_scene="res://scenes/maps/town.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.png"
@@ -25,6 +25,8 @@ config/icon="res://icon.png"
 GameState="*res://scripts/autoload/game_state.gd"
 SceneTransition="*res://scripts/autoload/scene_transition.gd"
 Dialogue="*res://scripts/autoload/dialogue.gd"
+Encounters="*res://scripts/autoload/encounters.gd"
+AnimaDex="*res://scripts/autoload/anima_dex.gd"
 TouchControls="*res://scripts/autoload/touch_controls.gd"
 
 [display]

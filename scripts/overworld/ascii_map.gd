@@ -2,12 +2,14 @@ class_name AsciiMap
 extends Node2D
 ## Builds a playable map at runtime from ASCII rows, using assets/tilesets/tiles.tres.
 ## Subclasses fill in the data in _setup(). For bigger maps, paint a TileMapLayer in
-## the editor instead; Player, NPC, and Warp work the same either way.
+## the editor instead; Player, NPC, Trainer, and Warp work the same either way.
 
 const TILE_SET: TileSet = preload("res://assets/tilesets/tiles.tres")
 const PLAYER_SCENE: PackedScene = preload("res://scenes/player.tscn")
 const NPC_SCENE: PackedScene = preload("res://scenes/npc.tscn")
+const TRAINER_SCENE: PackedScene = preload("res://scenes/trainer.tscn")
 const VIEW_SIZE := Vector2(240, 160)
+const ENCOUNTER_CHANCE := 0.2
 
 ## Character -> atlas coordinates in tiles.png.
 const LEGEND := {
@@ -24,12 +26,19 @@ var rows: PackedStringArray = []
 var start_tile := Vector2i.ZERO
 var start_facing: Facing.Dir = Facing.Dir.DOWN
 var intro: Array[String] = []
-## {tile: Vector2i, lines: Array, facing: Facing.Dir, body: Color, hair: Color, hidden: bool}
+## {tile: Vector2i, lines: Array, look: String, facing: Facing.Dir, hidden: bool}
 var npc_defs: Array[Dictionary] = []
+## {tile, look, id, facing, range, lines, after, team: [{anima: "Fidget", level: 3}]}
+var trainer_defs: Array[Dictionary] = []
 ## {tile: Vector2i, scene: String, to_tile: Vector2i, facing: Facing.Dir}
 var warp_defs: Array[Dictionary] = []
+## Wild animas in tall grass: {anima: "Nutkin", min: 2, max: 4, weight: 30}
+var encounter_table: Array[Dictionary] = []
 
 var _layer: TileMapLayer
+var _player: Player
+var _trainers: Array[Trainer] = []
+var _busy := false
 
 
 func _setup() -> void:
@@ -41,6 +50,7 @@ func _ready() -> void:
 	_build_tiles()
 	_build_warps()
 	_build_npcs()
+	_build_trainers()
 	_spawn_player()
 	if not intro.is_empty() and not GameState.get_flag("intro_shown"):
 		GameState.set_flag("intro_shown")
@@ -78,33 +88,72 @@ func _build_npcs() -> void:
 		npc.position = Player.tile_to_world(def.tile)
 		npc.dialogue.assign(def.lines)
 		npc.facing = def.get("facing", Facing.Dir.DOWN)
-		npc.body_color = def.get("body", npc.body_color)
-		npc.hair_color = def.get("hair", npc.hair_color)
+		npc.look = def.get("look", "kid_boy")
 		if def.get("hidden", false):  # invisible talk-trigger, e.g. for a sign tile
 			npc.visible = false
 			npc.turn_to_face_player = false
 		add_child(npc)
 
 
+func _build_trainers() -> void:
+	for def in trainer_defs:
+		var t: Trainer = TRAINER_SCENE.instantiate()
+		t.position = Player.tile_to_world(def.tile)
+		t.look = def.look
+		t.trainer_id = def.id
+		t.facing = def.get("facing", Facing.Dir.DOWN)
+		t.sight_range = def.get("range", 4)
+		t.dialogue.assign(def.lines)
+		t.defeated_lines.assign(def.get("after", ["You beat me fair and square!"]))
+		t.team.assign(def.team)
+		add_child(t)
+		_trainers.append(t)
+
+
 func _spawn_player() -> void:
-	var player: Player = PLAYER_SCENE.instantiate()
-	player.position = Player.tile_to_world(start_tile)
-	player.facing = Facing.to_vector(start_facing)
-	add_child(player)
+	_player = PLAYER_SCENE.instantiate()
+	_player.position = Player.tile_to_world(start_tile)
+	_player.facing = Facing.to_vector(start_facing)
+	add_child(_player)
 
 	# Keep the camera inside the map; centre maps smaller than the screen.
 	var map_px := Vector2(rows[0].length(), rows.size()) * Player.TILE
 	var pad := Vector2(maxf((VIEW_SIZE.x - map_px.x) / 2.0, 0.0), maxf((VIEW_SIZE.y - map_px.y) / 2.0, 0.0))
-	var cam: Camera2D = player.get_node("Camera2D")
+	var cam: Camera2D = _player.get_node("Camera2D")
 	cam.limit_left = int(-pad.x)
 	cam.limit_top = int(-pad.y)
 	cam.limit_right = int(map_px.x + pad.x)
 	cam.limit_bottom = int(map_px.y + pad.y)
 
-	player.stepped.connect(_on_player_stepped)
+	_player.stepped.connect(_on_player_stepped)
 
 
 func _on_player_stepped(tile: Vector2i) -> void:
+	if _busy:
+		return
+	for t in _trainers:
+		if t.can_see(_player):
+			_busy = true
+			await t.challenge(_player)
+			_busy = false
+			return
+	if encounter_table.is_empty():
+		return
 	var data := _layer.get_cell_tile_data(tile)
-	if data != null and data.get_custom_data("tall_grass") and randf() < 0.2:
-		Dialogue.say(["A wild creature appeared!", "(Battles arrive in Phase 4.)"])
+	if data != null and data.get_custom_data("tall_grass") and randf() < ENCOUNTER_CHANCE:
+		_busy = true
+		var pick := _pick_encounter()
+		await Encounters.wild(pick.id, pick.level)
+		_busy = false
+
+
+func _pick_encounter() -> Dictionary:
+	var total := 0
+	for e in encounter_table:
+		total += int(e.get("weight", 10))
+	var roll := randi() % total
+	for e in encounter_table:
+		roll -= int(e.get("weight", 10))
+		if roll < 0:
+			return {id = AnimaRoster.id_of(e.anima), level = randi_range(e.min, e.max)}
+	return {id = AnimaRoster.id_of(encounter_table[0].anima), level = encounter_table[0].min}

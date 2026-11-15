@@ -13,18 +13,19 @@ const TILE := 16
 
 @export var move_time := 0.2   ## seconds per tile
 @export var turn_delay := 0.1  ## pause after turning before you can walk
-@export var body_color := Color("d04a4a")  ## placeholder look, used when no sprite frames are set
-@export var hair_color := Color("2a2a5a")
+@export var look := "hero"  ## character id, see CharacterRoster
 
 var facing := Vector2.DOWN
 var moving := false
 var _turn_timer := 0.0
+var _walk_toggle := false
 
 @onready var _ray: RayCast2D = $RayCast2D
-@onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var _look: CharacterSprite = $Look
 
 
 func _ready() -> void:
+	_look.character = look
 	if GameState.has_spawn:
 		position = tile_to_world(GameState.spawn_tile)
 		facing = GameState.spawn_facing
@@ -94,6 +95,7 @@ func _can_move(dir: Vector2) -> bool:
 
 func _step(dir: Vector2) -> void:
 	moving = true
+	_walk_toggle = not _walk_toggle
 	_play("walk")
 
 	var target := position + dir * TILE
@@ -131,16 +133,12 @@ func _interact() -> void:
 		target.interact(facing)
 
 
-func _draw() -> void:
-	if _sprite == null or _sprite.sprite_frames == null:
-		PlaceholderSprite.draw_person(self, facing, body_color, hair_color)
+## Turns the player (used when a trainer challenges you).
+func face(dir: Vector2) -> void:
+	facing = dir
+	_play("idle")
 
 
-## Plays e.g. "walk_left" or "idle_down" if the AnimatedSprite2D has it.
+## kind: "idle" or "walk" (walking alternates the two step frames).
 func _play(kind: String) -> void:
-	queue_redraw()
-	if _sprite == null or _sprite.sprite_frames == null:
-		return
-	var anim := "%s_%s" % [kind, Facing.to_name(facing)]
-	if _sprite.sprite_frames.has_animation(anim):
-		_sprite.play(anim)
+	_look.show_frame(facing, 0 if kind == "idle" else (1 if _walk_toggle else 2))

@@ -37,6 +37,13 @@ func _hold(action: String, secs: float) -> void:
 	await create_timer(0.05).timeout
 
 
+func _close_dialogue() -> void:
+	for i in 40:
+		if not _locked():
+			return
+		await _hold("ui_accept", 0.04)
+
+
 func _run() -> void:
 	change_scene_to_file("res://scenes/maps/town.tscn")
 	await create_timer(0.5).timeout
@@ -68,6 +75,62 @@ func _run() -> void:
 	await _hold("ui_accept", 0.05)
 	await create_timer(0.1).timeout
 	_check("NPC dialogue opens", _locked())
+
+	await _close_dialogue()
+
+	# ---- Phase 2: roster, Animadex, encounters, trainers ----
+	var roster = load("res://scripts/data/anima_roster.gd")
+	_check("roster has 151 animas", roster.COUNT == 151 and roster.ANIMAS.size() == 151)
+	var names := {}
+	var evo_ok := true
+	for a in roster.ANIMAS:
+		names[a.name] = true
+		if a.evolves_to > 0 and roster.ANIMAS[a.evolves_to - 1].family != a.family:
+			evo_ok = false
+	_check("all 151 anima names are unique", names.size() == 151)
+	_check("evolution chains stay inside their family", evo_ok)
+	_check("sprite atlas region for #151 is correct", roster.icon(151).region.position == Vector2(192, 288))
+	var cast = load("res://scripts/data/character_roster.gd")
+	_check("character roster has 31 unique looks", cast.CAST.size() == 31 and cast.call("row_of", "warden") == 30)
+
+	var dex = root.get_node("AnimaDex")
+	await _hold("ui_cancel", 0.05)
+	_check("Esc opens the Animadex", dex.is_open and _locked())
+	await _hold("ui_down", 0.05)
+	await _hold("ui_right", 0.05)
+	_check("Animadex navigation moves the selection (1 + 1 + 10)", dex._sel == 12)
+	await _hold("ui_cancel", 0.05)
+	_check("Esc closes the Animadex", not dex.is_open and not _locked())
+
+	var gs = root.get_node("GameState")
+	root.get_node("Encounters").wild(101, 3)
+	await create_timer(0.1).timeout
+	_check("wild encounter marks the anima as seen", gs.seen.has(101) and _locked())
+	await _close_dialogue()
+	_check("wild encounter finishes and unlocks input", not _locked())
+
+	change_scene_to_file("res://scenes/maps/route1.tscn")
+	await create_timer(0.8).timeout
+	_check("Route 1 loads", current_scene.name == "Route1" and _player().get_tile() == Vector2i(1, 7))
+	var trainer: Node = null
+	for child in current_scene.get_children():
+		if "trainer_id" in child and child.trainer_id == "netter_pim":
+			trainer = child
+	_check("Route 1 has its trainers", trainer != null)
+	_player().position = Vector2(9, 8) * 16 + Vector2(8, 8)
+	_player().stepped.emit(Vector2i(9, 8))
+	await create_timer(0.1).timeout
+	_check("trainer spots the player in their line of sight", _locked())
+	for i in 150:
+		if gs.get_flag("beat_netter_pim"):
+			break
+		await _hold("ui_accept", 0.04)
+	_check("trainer walked up next to the player", Vector2i((trainer.position / 16.0).floor()) == Vector2i(9, 7))
+	_check("trainer challenge finished and was remembered", gs.get_flag("beat_netter_pim"))
+	await _close_dialogue()
+	_player().stepped.emit(Vector2i(9, 8))
+	await create_timer(0.3).timeout
+	_check("a beaten trainer does not challenge again", not _locked())
 
 	print("\nRESULT: %s" % ("ALL PASSED" if _fails == 0 else "%d FAILED" % _fails))
 	quit(_fails)

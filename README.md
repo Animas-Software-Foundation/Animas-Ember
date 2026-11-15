@@ -1,6 +1,6 @@
 # Animas: Ember
 
-![Version](https://img.shields.io/badge/version-v0.0.1-blue)
+![Version](https://img.shields.io/badge/version-v0.1.0-blue)
 ![Godot](https://img.shields.io/badge/Godot-4.7%2B-478cbf?logo=godotengine&logoColor=white)
 ![Status](https://img.shields.io/badge/status-pre--alpha-orange)
 
@@ -8,7 +8,7 @@
 
 [![Animas: Ember screenshot](docs/screenshot.png)](https://pixel-pulse-games.github.io/Animas-Ember/)
 
-> **Pre-alpha.** v0.0.1 is the walking-around foundation: a small town you can explore. Creatures, battles, and catching are on the roadmap below.
+> **Pre-alpha.** v0.1.0 is the Phase 2 release: explore the town and Route 1, meet all 151 animas, and get challenged by trainers. Real battles, catching, and moves are on the roadmap below.
 
 ## Play it
 
@@ -32,18 +32,31 @@ Not sure which one? Windows, Mac, and most modern Android phones want the 64-bit
 
 **First-run warnings are expected for now.** The builds are not yet signed with a paid certificate: on Windows choose *More info > Run anyway* in SmartScreen; on macOS right-click the app and choose *Open* (or use *System Settings > Privacy & Security > Open Anyway*); on Android allow installing from your browser or file manager.
 
-## What's in v0.0.1
+## What's in v0.1.0
 
-- Grid-based, tile-by-tile movement. Tap a direction to turn, hold it to walk.
-- A starter town and a house, with door warps and fade transitions
-- Talkable NPCs and signs with a typewriter dialogue box
-- Tall-grass tiles that trigger placeholder encounters
-- An original 16x16 tileset with collision pre-configured
-- A custom hand-drawn bitmap font, *Animas Pixel*, that stays crisp at any window size
+- **151 original animas** in 71 evolution families across 12 types, each with its own sprite, stats, and dex entry (see below)
+- **The Animadex:** press Esc (or tap DEX on a touch screen) to browse them all
+- **Trainers with line of sight** who spot you, walk up, and challenge you. Battles come in a later update
+- **Wild animas** hiding in tall grass, with per-map encounter tables
+- **31 unique character looks:** the hero, villagers, and every trainer have their own hair, outfit, and accessories
+- A starter town, a house, and **Route 1**, linked by door and route warps with fade transitions
+- Grid-based, tile-by-tile movement. Tap a direction to turn, hold it to walk
+- An original 16x16 tileset, and a hand-drawn bitmap font (*Animas Pixel*) that stays crisp at any size
 - On-screen touch controls on phones and tablets
 - Automated builds for Windows, Linux, macOS, Android (and iOS) on every release
-- Pixel-perfect 240x160 viewport (GBA resolution) with integer scaling
-- A headless smoke test for the core gameplay loop
+- A headless smoke test that covers movement, warps, NPCs, the roster, the Animadex, encounters, and trainer challenges
+
+## Meet the animas
+
+All 151 are original: names, designs, and stats. Twelve types (Ember, Tide, Bloom, Volt, Stone, Gale, Frost, Shade, Lumen, Venom, Iron, Wild), 30 three-stage lines, 20 two-stage lines, and 21 standalone animas. Browse them with filters on [the website](https://pixel-pulse-games.github.io/Animas-Ember/#animas) or in-game with the Animadex.
+
+![All 151 animas](docs/animas_preview.png)
+
+## Everyone has a face
+
+Every character has a unique look, from the hero to the elder to each trainer.
+
+![The cast](docs/characters_preview.png)
 
 ## Run the project
 
@@ -61,14 +74,15 @@ Open Godot, click **Import**, choose `project.godot`, then press **F5**.
 |-------------------------|-----------------------|
 | Move / turn             | Arrow keys or D-pad   |
 | Talk / read / advance   | Enter or Space        |
+| Open the Animadex       | Esc (DEX button on touch) |
 
 On phones and tablets an on-screen D-pad and **A** button appear. The browser demo also accepts WASD and Z.
 
 ## Roadmap
 
 - [x] **v0.0.1:** grid movement, collision, warps, NPCs, dialogue, tileset
-- [ ] **Phase 2:** trainers with line-of-sight, real wild encounters in tall grass
-- [ ] **Phase 3:** creature and move data, type chart
+- [x] **v0.1.0 (Phase 2):** 151 animas, the Animadex, wild encounters, trainers with line of sight, unique character looks, Route 1
+- [ ] **Phase 3:** moves, abilities, and the type chart
 - [ ] **Phase 4:** turn-based battles (damage formula, type effectiveness, status effects, enemy AI)
 - [ ] **Phase 5:** catching, party, bag, XP, leveling, evolution
 - [ ] **Phase 6:** gym leader, save/load, menus, music, polish

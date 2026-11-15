@@ -28,16 +28,22 @@ scripts/
     game_state.gd         Input lock, spawn point, story flags
     scene_transition.gd   Fade out -> change scene -> fade in
     dialogue.gd           Typewriter text box, built in code
-    touch_controls.gd     On-screen D-pad + A button (touch devices only)
+    touch_controls.gd     On-screen D-pad, A, and DEX buttons (touch devices only)
+    encounters.gd         Wild-anima and trainer encounter screens
+    anima_dex.gd          The Animadex browser (Esc)
   overworld/
     player.gd             Grid movement, interaction, warp checks
     npc.gd                Talkable StaticBody2D
     warp.gd               Door / route-edge marker
-    ascii_map.gd          Builds a map from ASCII rows at runtime
-    placeholder_sprite.gd Placeholder character art
+    trainer.gd            Trainer: line of sight, walk-up, challenge
+    character_sprite.gd   Draws one character from the characters atlas
+    ascii_map.gd          Builds a map from ASCII rows (NPCs, trainers, warps, encounter tables)
     facing.gd             Direction enum + helpers
+  data/                   GENERATED: anima_roster.gd, character_roster.gd
 assets/
   tilesets/               tiles.png + tiles.tres
+  animas/animas.png       Sprite atlas for all 151 animas (generated)
+  characters/             characters.png: 31 looks x 12 frames (generated)
   fonts/                  animas_pixel.png + .fnt (bitmap font)
 export_presets.cfg        Export presets for every platform (no secrets inside)
 .github/workflows/
@@ -45,6 +51,10 @@ export_presets.cfg        Export presets for every platform (no secrets inside)
 tools/
   generate_tiles.py       Regenerates the placeholder tileset
   generate_font.py        Regenerates the Animas Pixel font
+  generate_animas.py      The 151-anima roster, stats, dex text, and sprites (edit FAMILIES)
+  anima_art.py            The sprite engine (body shapes, features, palettes) used by the above
+  generate_characters.py  The 31 character looks (edit LOOKS)
+  build_site_data.py      Regenerates docs/data.js for the website from the game's files
   smoke_test.gd           Headless smoke test
 docs/                     Website (index.html, style.css, game.js, assets/), screenshot, developer docs
 ```
@@ -55,12 +65,38 @@ The project site lives in `docs/` and is deployed to GitHub Pages by `.github/wo
 
 | File | What it is |
 |------|------------|
-| `index.html`, `style.css` | The landing page. Light and dark themes follow the visitor's system setting. |
-| `game.js` | A JavaScript port of the starter town (same tileset, same *Animas Pixel* font, same movement rules). It is **not** the Godot build, so if you change `scenes/maps/*.gd` or the dialogue, update the `MAPS` data in `game.js` too. |
-| `assets/` | Copies of `tiles.png`, `animas_pixel.png`, and `icon.png` used by the page. Re-copy them if you repaint the originals. |
+| `index.html`, `style.css`, `animas.js` | The landing page, the 151-anima gallery, and the cast. Light and dark themes follow the visitor's system setting. |
+| `data.js` | **Generated** by `tools/build_site_data.py` from the game's own maps, roster, cast, and font. |
+| `game.js` | A JavaScript port of the starter town (same tileset, same *Animas Pixel* font, same movement rules). It is **not** the Godot build, so NPCs, trainers, and encounter tables are duplicated by hand in its `MAPS` data. The map layouts, roster, cast, and font are not: run `python3 tools/build_site_data.py` after changing them. |
+| `assets/` | Copies of the tileset, font, icon, `animas.png`, and `characters.png` used by the page. The generators refresh the animas and characters copies; re-copy the others if you repaint them. |
 | `screenshot.png` | README and social-card image. Regenerate with `python3 tools/render_screenshot.py`. |
 
 The download buttons read the newest GitHub Release in the visitor's browser, so new builds show up with no site change. Preview locally with `python3 -m http.server -d docs 8000` and open http://localhost:8000.
+
+## Animas, characters, and trainers
+
+**The roster.** All 151 animas come from `FAMILIES` in `tools/generate_animas.py`: each family lists its stage names, types, body shape, features (gained one per evolution), and a dex blurb. Run `python3 tools/generate_animas.py` to regenerate the sprite atlas and `scripts/data/anima_roster.gd`. Everything is deterministic, so the same input always gives the same sprites. Look things up in code with `AnimaRoster.get_anima(id)`, `AnimaRoster.id_of("Cindle")`, and `AnimaRoster.icon(id)`.
+
+**Characters.** `LOOKS` in `tools/generate_characters.py` defines every look (skin, hair style and color, outfit, accessory). Regenerate with `python3 tools/generate_characters.py`. Use a look by setting `look = "scout"` on an NPC, Trainer, or the Player.
+
+**Adding an NPC or trainer to an ASCII map** (`scenes/maps/*.gd`):
+
+```gdscript
+npc_defs = [
+	{tile = Vector2i(10, 6), look = "kid_boy", lines = ["Hello!"]},
+]
+trainer_defs = [
+	{tile = Vector2i(9, 5), look = "netter", id = "netter_pim", facing = Facing.Dir.DOWN, range = 4,
+		lines = ["Let's battle!"], after = ["You beat me!"],
+		team = [{anima = "Fidget", level = 3}, {anima = "Sparkbug", level = 4}]},
+]
+```
+
+A trainer challenges you when you step into the tiles they face (up to `range`) with nothing solid between. `id` must be unique: it is how the game remembers that you beat them.
+
+**Wild animas.** Set `encounter_table` on a map: `{anima = "Nutkin", min = 2, max = 4, weight = 30}`. Stepping on tall grass has a 20% chance of a roll (`AsciiMap.ENCOUNTER_CHANCE`).
+
+**Animadex.** `Esc` opens it (`AnimaDex` autoload): Up/Down move, Left/Right jump 10, Enter switches between Stats and Info.
 
 ## Building and releasing
 

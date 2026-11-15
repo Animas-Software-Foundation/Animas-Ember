@@ -25,3 +25,14 @@ static func to_name(v: Vector2) -> String:
 	if v == Vector2.RIGHT:
 		return "right"
 	return "down"
+
+
+## 0 down, 1 up, 2 left, 3 right: the order of the rows in characters.png.
+static func index_of(v: Vector2) -> int:
+	if v == Vector2.UP:
+		return 1
+	if v == Vector2.LEFT:
+		return 2
+	if v == Vector2.RIGHT:
+		return 3
+	return 0
