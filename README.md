@@ -20,13 +20,15 @@
 
 Every tagged release is built automatically for these platforms:
 
-| Platform | Architectures | Download |
-|----------|---------------|----------|
-| Windows  | x86_64, x86_32 (32-bit), arm64 | `.zip` with a single `.exe` |
-| Linux    | x86_64, x86_32 (32-bit), arm64, arm32 | `.tar.gz` (binary is already executable) |
-| macOS    | Universal: Intel (x86_64) + Apple Silicon (arm64) | `.zip` containing the `.app` |
+| Platform | Architectures | Files |
+|----------|---------------|-------|
+| Windows  | x86_64, x86_32 (32-bit), arm64 | `-setup.exe` installer, `-portable.zip`, or a plain `.zip` |
+| Linux    | x86_64, x86_32 (32-bit), arm64, arm32 | `-setup.run` installer, `-portable.tar.gz`, or a plain `.tar.gz` |
+| macOS    | Universal: Intel (x86_64) + Apple Silicon (arm64) | `-setup.run` installer, `-portable.zip`, or a plain `.zip` |
 | Android  | arm64, arm32, x86_64, x86, or one universal APK | `.apk` |
 | iOS      | arm64 | Xcode project (build it yourself with your Apple Developer account) |
+
+**Installer or portable?** Both are *portable*: the game keeps your saves and settings in a `data` folder next to it, and writes nothing to AppData or your home folder, so you can move or copy the whole folder (to a USB stick, another PC) and take your progress with you. The **setup** file is a tiny self-extracting installer (written in Rust): run it, pick a folder (by default one next to the installer), and it unpacks the game. Installing over an old version keeps your `data` folder. The plain archive is just the game, which behaves like a normal Godot game (data goes to the system's usual location).
 
 Not sure which one? Windows, Mac, and most modern Android phones want the 64-bit builds (x86_64 / arm64 / universal). A `SHA256SUMS.txt` is attached to every release.
 

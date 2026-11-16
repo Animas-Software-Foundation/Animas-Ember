@@ -1,0 +1,25 @@
+[package]
+name = "animas-installer"
+version = "0.1.0"
+edition = "2021"
+description = "Self-extracting installer stub and portable launcher for Animas: Ember"
+publish = false
+
+[[bin]]
+name = "animas-sfx"
+path = "src/sfx.rs"
+
+[[bin]]
+name = "animas-launch"
+path = "src/launch.rs"
+
+[dependencies]
+# Pure-Rust zip reading with deflate only: keeps the stub small.
+zip = { version = "0.6", default-features = false, features = ["deflate"] }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

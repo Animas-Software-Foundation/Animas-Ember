@@ -23,6 +23,8 @@ code = major * 1_000_000 + minor * 1_000 + patch
 
 RULES = {
     "project.godot": [(r'(config/version=")[^"]*(")', version)],
+    "installer/Cargo.toml": [(r'(?m)^(version = ")[^"]*(")', core)],
+    "installer/Cargo.lock": [(r'(name = "animas-installer"\nversion = ")[^"]*(")', core)],
     "export_presets.cfg": [
         (r'(version/name=")[^"]*(")', version),
         (r'(application/short_version=")[^"]*(")', core),

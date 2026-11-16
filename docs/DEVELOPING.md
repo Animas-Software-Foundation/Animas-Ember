@@ -55,6 +55,9 @@ tools/
   anima_art.py            The sprite engine (body shapes, features, palettes) used by the above
   generate_characters.py  The 31 character looks (edit LOOKS)
   build_site_data.py      Regenerates docs/data.js for the website from the game's files
+  package_portable.py     Builds the portable archive and the self-extracting installer
+  test_installer.py       Tests the Rust installer stub, launcher, and packer
+installer/                Rust crate: animas-sfx (installer stub) and animas-launch (portable launcher)
   smoke_test.gd           Headless smoke test
 docs/                     Website (index.html, style.css, game.js, assets/), screenshot, developer docs
 ```
@@ -97,6 +100,45 @@ A trainer challenges you when you step into the tiles they face (up to `range`) 
 **Wild animas.** Set `encounter_table` on a map: `{anima = "Nutkin", min = 2, max = 4, weight = 30}`. Stepping on tall grass has a 20% chance of a roll (`AsciiMap.ENCOUNTER_CHANCE`).
 
 **Animadex.** `Esc` opens it (`AnimaDex` autoload): Up/Down move, Left/Right jump 10, Enter switches between Stats and Info.
+
+## Portable data and the installer
+
+**The problem.** Godot stores `user://` (saves, settings) in AppData on Windows, `~/.local/share` on Linux, and `~/Library/Application Support` on macOS, and creates that folder at startup. Exported games have no built-in portable mode (`_sc_` only works for the editor), and nothing inside the game can stop that folder being created, because it happens before any script runs.
+
+**The fix.** The desktop release ships a small launcher (`Animas Ember[.exe]`, `installer/src/launch.rs`) that starts the game with its data folders redirected before the engine starts:
+
+| Variable | Set to | Used by |
+|----------|--------|---------|
+| `XDG_DATA_HOME`, `XDG_CONFIG_HOME`, `XDG_CACHE_HOME` | `data/share`, `data/config`, `data/cache` | Godot on Linux and Windows |
+| `APPDATA` | `data/roaming` | Godot on Windows (belt and braces) |
+| `HOME` | `data/home` | Godot on macOS (it has no XDG support) |
+| `ANIMAS_PORTABLE` | `1` | tells the game it is running portably |
+
+If `data/` is not writable (for example, installed under Program Files) the launcher changes nothing and the game runs normally. The game itself must keep using `user://` for saves (Phase 6): with the launcher it lands in `data/`. PC file logging is disabled in `project.godot` so no log is written either.
+
+**Package layout** (`tools/package_portable.py`):
+
+```
+Animas Ember[.exe]   the launcher
+bin/                 the exported game, plus bin/.entry naming its executable
+data/                saves and settings; the installer never overwrites this
+```
+
+**The installer** (`installer/src/sfx.rs`) is a stub: an installer file is `stub + zip payload + 16-byte trailer` (payload length as little-endian u64, then `ANIMASFX`). Running it asks for a folder (default: `Animas Ember` next to the installer), extracts, and offers to launch. Flags: `--dir <path>`, `--yes`, `--run`, `--list`, `--version`. Updating keeps `data/`; unsafe zip paths (`..`, absolute) are skipped; a damaged payload is detected by CRC and reported.
+
+**Build and test locally** (needs Rust):
+
+```bash
+python3 tools/test_installer.py                       # builds the crate and tests stub, launcher, packer
+cargo build --release --manifest-path installer/Cargo.toml
+python3 tools/package_portable.py --platform linux --game build/game.x86_64 \
+  --launcher installer/target/release/animas-launch --stub installer/target/release/animas-sfx \
+  --out-dir dist --name animas-ember-test
+```
+
+CI cross-compiles both programs for every desktop target with `cargo-zigbuild` (static musl on Linux, GNU on Windows, universal2 on macOS) in the `portable` job. That job is `continue-on-error`, so the plain archives are still released if it fails.
+
+**Verified:** on Linux the launcher leaves the home folder completely untouched and the game's user data lands in `data/` (tested with the real export). The Windows and macOS redirects rely on Godot reading `XDG_DATA_HOME`/`APPDATA` (Windows) and `HOME` (macOS); check on first run that `%APPDATA%\Godot` is not created.
 
 ## Building and releasing
 

@@ -19,3 +19,6 @@ Thumbs.db
 /Game.pck
 /PrivacyInfo.xcprivacy
 *.xcodeproj/
+
+# Rust build output
+installer/target/

@@ -10,6 +10,7 @@ Phase 2 is here. The world now has **151 original animas**, and every one has it
 - **Wild encounters** in tall grass, with per-map encounter tables and an encounter screen
 - **31 unique character looks:** the hero, rival, villagers, and every trainer have their own hair, outfit, and accessories
 - **Route 1:** a new map east of town with three trainers and wild grass
+- **Portable by default:** new `-portable` archives and tiny `-setup` installers keep your saves in a `data` folder next to the game and write nothing to AppData. Copy the folder and your progress comes with you
 - **A redesigned website** with an interactive gallery of all 151 animas, a character showcase, and a playable demo that now includes Route 1 and its trainers
 
 ## Try it

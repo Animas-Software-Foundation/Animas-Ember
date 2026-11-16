@@ -29,6 +29,10 @@ Encounters="*res://scripts/autoload/encounters.gd"
 AnimaDex="*res://scripts/autoload/anima_dex.gd"
 TouchControls="*res://scripts/autoload/touch_controls.gd"
 
+[debug]
+
+file_logging/enable_file_logging.pc=false
+
 [display]
 
 window/size/viewport_width=240

@@ -91,12 +91,14 @@ jobs:
             echo
             echo "Files are named \`${PROJECT_SLUG}-${TAG}-<platform>\`. A \`SHA256SUMS.txt\` is attached for verification."
             echo
-            echo "| Platform | Architectures |"
-            echo "|----------|---------------|"
-            echo "| Windows (\`.zip\`) | x86_64, x86_32, arm64 |"
-            echo "| Linux (\`.tar.gz\`) | x86_64, x86_32, arm64, arm32 |"
-            echo "| macOS (\`.zip\`) | universal (Intel + Apple Silicon) |"
-            echo "| Android (\`.apk\`) | arm64, arm32, x86_64, x86, universal |"
+            echo "| Platform | Installer (self-extracting) | Portable | Plain archive |"
+            echo "|----------|-----------------------------|----------|---------------|"
+            echo "| Windows (x86_64, x86_32, arm64) | \`*-setup.exe\` | \`*-portable.zip\` | \`*.zip\` |"
+            echo "| Linux (x86_64, x86_32, arm64, arm32) | \`*-setup.run\` | \`*-portable.tar.gz\` | \`*.tar.gz\` |"
+            echo "| macOS (universal) | \`*-setup.run\` | \`*-portable.zip\` | \`*.zip\` |"
+            echo "| Android (arm64, arm32, x86_64, x86, universal) | | | \`*.apk\` |"
+            echo
+            echo "**Installer** and **portable** downloads keep your saves and settings in a \`data\` folder next to the game, so nothing is written to AppData or your home folder. The plain archive is just the game."
           } > notes/NOTES.md
 
           {
@@ -129,6 +131,8 @@ jobs:
         run: godot --headless --import || true
       - name: Run smoke test
         run: godot --headless -s tools/smoke_test.gd
+      - name: Test the Rust installer stub and launcher
+        run: python3 tools/test_installer.py
 
   # ---------------------------------------------------------------------------
   desktop:
@@ -175,6 +179,66 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: dist-${{ matrix.asset }}
+          path: dist/*
+          if-no-files-found: error
+      - name: Keep the raw export for the portable/installer job
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-${{ matrix.asset }}
+          path: build/${{ matrix.file }}
+          retention-days: 1
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Portable archive + self-extracting installer per desktop platform. The Rust launcher and installer
+  # stub (installer/) are cross-compiled with cargo-zigbuild. If this job fails, the plain builds above
+  # are still released.
+  portable:
+    name: Portable + setup (${{ matrix.asset }})
+    needs: [meta, desktop]
+    if: needs.meta.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { asset: windows-x86_64, file: AnimasEmber-windows-x86_64.exe, platform: windows, rust: x86_64-pc-windows-gnu,         targets: x86_64-pc-windows-gnu,         exe: ".exe" }
+          - { asset: windows-x86_32, file: AnimasEmber-windows-x86_32.exe, platform: windows, rust: i686-pc-windows-gnu,           targets: i686-pc-windows-gnu,           exe: ".exe" }
+          - { asset: windows-arm64,  file: AnimasEmber-windows-arm64.exe,  platform: windows, rust: aarch64-pc-windows-gnullvm,    targets: aarch64-pc-windows-gnullvm,    exe: ".exe" }
+          - { asset: linux-x86_64, file: AnimasEmber-linux-x86_64.x86_64, platform: linux, rust: x86_64-unknown-linux-musl,        targets: x86_64-unknown-linux-musl,        exe: "" }
+          - { asset: linux-x86_32, file: AnimasEmber-linux-x86_32.x86_32, platform: linux, rust: i686-unknown-linux-musl,          targets: i686-unknown-linux-musl,          exe: "" }
+          - { asset: linux-arm64,  file: AnimasEmber-linux-arm64.arm64,   platform: linux, rust: aarch64-unknown-linux-musl,      targets: aarch64-unknown-linux-musl,      exe: "" }
+          - { asset: linux-arm32,  file: AnimasEmber-linux-arm32.arm32,   platform: linux, rust: armv7-unknown-linux-musleabihf,  targets: armv7-unknown-linux-musleabihf,  exe: "" }
+          - { asset: macos-universal, file: AnimasEmber-macos-universal.zip, platform: macos, rust: universal2-apple-darwin, targets: "x86_64-apple-darwin aarch64-apple-darwin", exe: "" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: raw-${{ matrix.asset }}
+          path: raw
+      - name: Stamp version ${{ needs.meta.outputs.version }}
+        run: python3 tools/sync_version.py
+      - name: Install Rust targets and zig
+        run: |
+          rustup target add ${{ matrix.targets }}
+          pip install ziglang cargo-zigbuild
+      - name: Build the launcher and installer stub
+        run: cargo zigbuild --release --locked --manifest-path installer/Cargo.toml --target ${{ matrix.rust }}
+      - name: Package
+        run: |
+          BIN="installer/target/${{ matrix.rust }}/release"
+          python3 tools/package_portable.py \
+            --platform ${{ matrix.platform }} \
+            --game "raw/${{ matrix.file }}" \
+            --launcher "$BIN/animas-launch${{ matrix.exe }}" \
+            --stub "$BIN/animas-sfx${{ matrix.exe }}" \
+            --out-dir dist \
+            --name "${PROJECT_SLUG}-${{ needs.meta.outputs.tag }}-${{ matrix.asset }}" \
+            --version "${{ needs.meta.outputs.version }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-portable-${{ matrix.asset }}
           path: dist/*
           if-no-files-found: error
 
@@ -290,7 +354,7 @@ jobs:
   # ---------------------------------------------------------------------------
   release:
     name: Publish ${{ needs.meta.outputs.tag }}
-    needs: [meta, desktop, android, ios]
+    needs: [meta, desktop, portable, android, ios]
     if: ${{ needs.meta.outputs.release == 'true' && !cancelled() && !contains(needs.*.result, 'failure') }}
     runs-on: ubuntu-latest
     permissions:
