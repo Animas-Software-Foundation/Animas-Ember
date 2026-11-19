@@ -1,11 +1,13 @@
 extends CanvasLayer
 ## The Animadex: browse all 151 animas (autoload: AnimaDex).
-## Open with Esc (or the DEX button on touch screens).
+## Open it from the menu (Esc, or the MENU button on touch screens).
 ## Up/Down: move   Left/Right: jump 10   Enter/A: switch Stats <-> Info   Esc: close
 
 const FONT_PATH := "res://assets/fonts/animas_pixel.fnt"
 const ROWS := 10
 const STAT_NAMES := ["HP", "ATK", "DEF", "SPD", "SPC"]
+
+signal closed
 
 var is_open := false
 var _sel := 1
@@ -93,13 +95,11 @@ func close() -> void:
 	is_open = false
 	_root.visible = false
 	GameState.input_locked = false
+	closed.emit()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_open:
-		if event.is_action_pressed("ui_cancel") and not GameState.input_locked:
-			open()
-			get_viewport().set_input_as_handled()
 		return
 	get_viewport().set_input_as_handled()
 	if event.is_action_pressed("ui_cancel"):

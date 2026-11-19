@@ -32,3 +32,22 @@ func mark_seen(anima_id: int) -> void:
 
 func seen_count() -> int:
 	return seen.size()
+
+
+## Seconds played; saved and restored by SaveGame.
+var playtime := 0.0
+## Scene file of the map the player is in (set by AsciiMap); saved by SaveGame.
+var current_map := ""
+
+
+func _process(delta: float) -> void:
+	playtime += delta
+
+
+## Back to a brand-new game (used by "New game" in the menu).
+func reset() -> void:
+	flags.clear()
+	seen.clear()
+	playtime = 0.0
+	has_spawn = false
+	input_locked = false

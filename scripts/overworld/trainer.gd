@@ -69,6 +69,7 @@ func _run_battle() -> void:
 	await Dialogue.say(dialogue)
 	await Encounters.trainer_battle(self)
 	GameState.set_flag("beat_" + trainer_id)
+	SaveGame.save()
 
 
 func _exclaim() -> void:

@@ -25,6 +25,8 @@ RULES = {
     "project.godot": [(r'(config/version=")[^"]*(")', version)],
     "installer/Cargo.toml": [(r'(?m)^(version = ")[^"]*(")', core)],
     "installer/Cargo.lock": [(r'(name = "animas-installer"\nversion = ")[^"]*(")', core)],
+    "installer-gui/Cargo.toml": [(r'(?m)^(version = ")[^"]*(")', core)],
+    "installer-gui/Cargo.lock": [(r'(name = "animas-setup"\nversion = ")[^"]*(")', core)],
     "export_presets.cfg": [
         (r'(version/name=")[^"]*(")', version),
         (r'(application/short_version=")[^"]*(")', core),

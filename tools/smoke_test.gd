@@ -94,13 +94,20 @@ func _run() -> void:
 	_check("character roster has 31 unique looks", cast.CAST.size() == 31 and cast.call("row_of", "warden") == 30)
 
 	var dex = root.get_node("AnimaDex")
+	var menu = root.get_node("GameMenu")
+	var sg = root.get_node("SaveGame")
+	sg.delete_save()
 	await _hold("ui_cancel", 0.05)
-	_check("Esc opens the Animadex", dex.is_open and _locked())
+	_check("Esc opens the menu", menu.is_open and _locked())
+	await _hold("ui_accept", 0.05)
+	_check("the menu opens the Animadex", dex.is_open)
 	await _hold("ui_down", 0.05)
 	await _hold("ui_right", 0.05)
 	_check("Animadex navigation moves the selection (1 + 1 + 10)", dex._sel == 12)
 	await _hold("ui_cancel", 0.05)
-	_check("Esc closes the Animadex", not dex.is_open and not _locked())
+	_check("closing the Animadex returns to the menu", not dex.is_open and menu.is_open and _locked())
+	await _hold("ui_cancel", 0.05)
+	_check("Esc closes the menu", not menu.is_open and not _locked())
 
 	var gs = root.get_node("GameState")
 	root.get_node("Encounters").wild(101, 3)
@@ -131,6 +138,43 @@ func _run() -> void:
 	_player().stepped.emit(Vector2i(9, 8))
 	await create_timer(0.3).timeout
 	_check("a beaten trainer does not challenge again", not _locked())
+
+	# ---- saving and continuing ----
+	await _hold("ui_cancel", 0.05)
+	await _hold("ui_down", 0.05)
+	await _hold("ui_accept", 0.05)
+	_check("menu > Save game writes the save file", sg.has_save())
+	var data = JSON.parse_string(FileAccess.get_file_as_string(sg.SAVE_PATH))
+	_check("the save records map, position, trainer wins and seen animas",
+		data.map == "res://scenes/maps/route1.tscn" and int(data.tile[0]) == 9 and int(data.tile[1]) == 8 \
+		and data.flags.has("beat_netter_pim") and data.seen.size() >= 1 and data.version == 1)
+	await _hold("ui_cancel", 0.05)
+	change_scene_to_file("res://scenes/maps/town.tscn")
+	await create_timer(0.8).timeout
+	gs.flags.clear()
+	gs.seen.clear()
+	sg.continue_game()
+	await create_timer(1.6).timeout
+	_check("Continue returns to the saved map and position", current_scene.name == "Route1" and _player().get_tile() == Vector2i(9, 8))
+	_check("Continue restores trainer wins and seen animas", gs.get_flag("beat_netter_pim") and gs.seen.has(101))
+
+	var bad = FileAccess.open(sg.SAVE_PATH, FileAccess.WRITE)
+	bad.store_string("not json {")
+	bad.close()
+	_check("a damaged save is rejected and set aside, not crashed on", not sg.load_game() and not sg.has_save() and FileAccess.file_exists(sg.SAVE_PATH + ".corrupt"))
+	sg.delete_save()
+	_check("delete_save removes every save file", not sg.has_save() and not FileAccess.file_exists(sg.SAVE_PATH + ".corrupt"))
+
+	await _hold("ui_cancel", 0.05)
+	await _hold("ui_down", 0.05)
+	await _hold("ui_down", 0.05)
+	await _hold("ui_accept", 0.05)
+	_check("New game asks for confirmation first", menu._confirm_new and menu.is_open and gs.get_flag("beat_netter_pim"))
+	await _hold("ui_accept", 0.05)
+	await create_timer(1.2).timeout
+	_check("New game wipes progress and starts in the town", current_scene.name == "Town" and not gs.get_flag("beat_netter_pim") and gs.seen_count() == 0)
+	await _close_dialogue()
+	sg.delete_save()
 
 	print("\nRESULT: %s" % ("ALL PASSED" if _fails == 0 else "%d FAILED" % _fails))
 	quit(_fails)

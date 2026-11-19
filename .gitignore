@@ -22,3 +22,4 @@ Thumbs.db
 
 # Rust build output
 installer/target/
+installer-gui/target/

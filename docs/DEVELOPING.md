@@ -30,7 +30,9 @@ scripts/
     dialogue.gd           Typewriter text box, built in code
     touch_controls.gd     On-screen D-pad, A, and DEX buttons (touch devices only)
     encounters.gd         Wild-anima and trainer encounter screens
-    anima_dex.gd          The Animadex browser (Esc)
+    anima_dex.gd          The Animadex browser (opened from the menu)
+    game_menu.gd          The pause menu (Esc / MENU button)
+    save_game.gd          Save, load, and continue
   overworld/
     player.gd             Grid movement, interaction, warp checks
     npc.gd                Talkable StaticBody2D
@@ -57,7 +59,8 @@ tools/
   build_site_data.py      Regenerates docs/data.js for the website from the game's files
   package_portable.py     Builds the portable archive and the self-extracting installer
   test_installer.py       Tests the Rust installer stub, launcher, and packer
-installer/                Rust crate: animas-sfx (installer stub) and animas-launch (portable launcher)
+installer/                Rust crate: animas-sfx (console installer stub), animas-launch (portable launcher), payload.rs (shared)
+installer-gui/            Rust crate: animas-setup, the graphical installer stub for Windows (egui)
   smoke_test.gd           Headless smoke test
 docs/                     Website (index.html, style.css, game.js, assets/), screenshot, developer docs
 ```
@@ -99,7 +102,16 @@ A trainer challenges you when you step into the tiles they face (up to `range`) 
 
 **Wild animas.** Set `encounter_table` on a map: `{anima = "Nutkin", min = 2, max = 4, weight = 30}`. Stepping on tall grass has a 20% chance of a roll (`AsciiMap.ENCOUNTER_CHANCE`).
 
-**Animadex.** `Esc` opens it (`AnimaDex` autoload): Up/Down move, Left/Right jump 10, Enter switches between Stats and Info.
+**Menu and Animadex.** `Esc` opens the menu (`GameMenu` autoload): Animadex, Save game, New game, Resume. In the Animadex (`AnimaDex` autoload): Up/Down move, Left/Right jump 10, Enter switches between Stats and Info, Esc goes back to the menu.
+
+## Saving
+
+`SaveGame` writes one file, `user://save.json` (with the portable launcher that is `<game folder>/data/share/godot/app_userdata/Animas- Ember/save.json`). It stores the map, player tile and facing, story flags (including trainers you have beaten), the animas you have seen, and play time, plus a format `version`.
+
+- **Autosave** runs after map changes (`SceneTransition`), trainer wins, encounters, when the window closes, and when a phone app is paused. The menu also has *Save game*.
+- **Continue** happens at launch: `SaveGame._ready` loads the file before the first map builds, then moves the player to the saved spot. Start fresh with `--new-game`, the menu's *New game*, or by deleting `save.json`. Script runs (`-s`) never auto-continue, so tests are not affected.
+- **Safety:** saves are written to a temporary file and renamed, and a damaged or newer-format save is kept as `save.json.corrupt` rather than crashing the game.
+- **Adding to the save:** put new state in `GameState` (it is already saved if it is a flag or an anima id) and extend `SaveGame.save()`/`load_game()`. Bump `FORMAT` only if old saves would break.
 
 ## Portable data and the installer
 
@@ -114,7 +126,7 @@ A trainer challenges you when you step into the tiles they face (up to `range`) 
 | `HOME` | `data/home` | Godot on macOS (it has no XDG support) |
 | `ANIMAS_PORTABLE` | `1` | tells the game it is running portably |
 
-If `data/` is not writable (for example, installed under Program Files) the launcher changes nothing and the game runs normally. The game itself must keep using `user://` for saves (Phase 6): with the launcher it lands in `data/`. PC file logging is disabled in `project.godot` so no log is written either.
+If `data/` is not writable (for example, installed under Program Files) the launcher changes nothing and the game runs normally. Saves use `user://` (see Saving above), which the launcher redirects into `data/`. PC file logging is disabled in `project.godot` so no log is written either.
 
 **Package layout** (`tools/package_portable.py`):
 
@@ -124,19 +136,24 @@ bin/                 the exported game, plus bin/.entry naming its executable
 data/                saves and settings; the installer never overwrites this
 ```
 
-**The installer** (`installer/src/sfx.rs`) is a stub: an installer file is `stub + zip payload + 16-byte trailer` (payload length as little-endian u64, then `ANIMASFX`). Running it asks for a folder (default: `Animas Ember` next to the installer), extracts, and offers to launch. Flags: `--dir <path>`, `--yes`, `--run`, `--list`, `--version`. Updating keeps `data/`; unsafe zip paths (`..`, absolute) are skipped; a damaged payload is detected by CRC and reported.
+**The installers** are *stubs*: an installer file is `stub + zip payload + 16-byte trailer` (payload length as little-endian u64, then `ANIMASFX`), so the stub is built once per platform and the packer just attaches the game. The shared logic (finding the payload, extracting, never overwriting `data/`, rejecting unsafe zip paths, CRC checks) is `installer/src/payload.rs`.
+
+- **Windows:** `installer-gui/` (`animas-setup`) is a small wizard built with egui/eframe: *Install now* or *Customize* (folder, overwrite, start when finished), then a progress page with Cancel, then Play / Open Folder / Close. It extracts on a background thread, and shows a clear failure page if something goes wrong.
+- **Linux and macOS:** `installer/` (`animas-sfx`) is a console installer that asks for a folder, extracts, and offers to launch.
+- **Both** accept unattended flags: `--silent` (or `--yes`, or `/S` on Windows), `--dir <path>` (or `/D=<path>`), `--run`, `--list`, `--version`. The GUI also has `--no-overwrite`. The default folder is `Animas Ember` next to the installer, and updating keeps `data/`.
 
 **Build and test locally** (needs Rust):
 
 ```bash
-python3 tools/test_installer.py                       # builds the crate and tests stub, launcher, packer
+python3 tools/test_installer.py                       # tests the console stub, the launcher, and the packer (and the GUI stub if built)
+cargo build --release --manifest-path installer-gui/Cargo.toml   # optional: the GUI stub (big dependency tree, takes a few minutes)
 cargo build --release --manifest-path installer/Cargo.toml
 python3 tools/package_portable.py --platform linux --game build/game.x86_64 \
   --launcher installer/target/release/animas-launch --stub installer/target/release/animas-sfx \
   --out-dir dist --name animas-ember-test
 ```
 
-CI cross-compiles both programs for every desktop target with `cargo-zigbuild` (static musl on Linux, GNU on Windows, universal2 on macOS) in the `portable` job. That job is `continue-on-error`, so the plain archives are still released if it fails.
+CI builds the installers in two jobs: `portable` cross-compiles the launcher and console installer for Linux (static musl) and macOS (universal2) with `cargo-zigbuild`, and `portable-windows` builds the launcher and the graphical installer natively with MSVC on Windows runners (x86_64, x86_32, arm64). Both jobs are `continue-on-error`, so the plain archives are still released if one fails. The GUI installer is not shipped for Linux or macOS because eframe needs system libraries there that a portable download cannot rely on.
 
 **Verified:** on Linux the launcher leaves the home folder completely untouched and the game's user data lands in `data/` (tested with the real export). The Windows and macOS redirects rely on Godot reading `XDG_DATA_HOME`/`APPDATA` (Windows) and `HOME` (macOS); check on first run that `%APPDATA%\Godot` is not created.
 

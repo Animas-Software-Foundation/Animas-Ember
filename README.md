@@ -1,6 +1,6 @@
 # Animas: Ember
 
-![Version](https://img.shields.io/badge/version-v0.1.0-blue)
+![Version](https://img.shields.io/badge/version-v0.2.0-blue)
 ![Godot](https://img.shields.io/badge/Godot-4.7%2B-478cbf?logo=godotengine&logoColor=white)
 ![Status](https://img.shields.io/badge/status-pre--alpha-orange)
 
@@ -8,7 +8,7 @@
 
 [![Animas: Ember screenshot](docs/screenshot.png)](https://pixel-pulse-games.github.io/Animas-Ember/)
 
-> **Pre-alpha.** v0.1.0 is the Phase 2 release: explore the town and Route 1, meet all 151 animas, and get challenged by trainers. Real battles, catching, and moves are on the roadmap below.
+> **Pre-alpha.** v0.2.0: explore the town and Route 1, meet all 151 animas, get challenged by trainers, and save your progress. Real battles, catching, and moves are on the roadmap below.
 
 ## Play it
 
@@ -28,16 +28,20 @@ Every tagged release is built automatically for these platforms:
 | Android  | arm64, arm32, x86_64, x86, or one universal APK | `.apk` |
 | iOS      | arm64 | Xcode project (build it yourself with your Apple Developer account) |
 
-**Installer or portable?** Both are *portable*: the game keeps your saves and settings in a `data` folder next to it, and writes nothing to AppData or your home folder, so you can move or copy the whole folder (to a USB stick, another PC) and take your progress with you. The **setup** file is a tiny self-extracting installer (written in Rust): run it, pick a folder (by default one next to the installer), and it unpacks the game. Installing over an old version keeps your `data` folder. The plain archive is just the game, which behaves like a normal Godot game (data goes to the system's usual location).
+**Installer or portable?** Both are *portable*: the game keeps your saves and settings in a `data` folder next to it, and writes nothing to AppData or your home folder, so you can move or copy the whole folder (to a USB stick, another PC) and take your progress with you. The **setup** file is a small self-extracting installer written in Rust. On Windows it is a graphical wizard (choose a folder, watch the progress, start the game when it finishes); on Linux and macOS it is a console installer. By default it unpacks into a folder next to the installer. Installing over an old version keeps your `data` folder. For unattended installs, run it with `--silent --dir <folder>` (Windows: `setup.exe /S /D=<folder>`).
+
+![The Windows installer](docs/installer.png) The plain archive is just the game, which behaves like a normal Godot game (data goes to the system's usual location).
 
 Not sure which one? Windows, Mac, and most modern Android phones want the 64-bit builds (x86_64 / arm64 / universal). A `SHA256SUMS.txt` is attached to every release.
 
 **First-run warnings are expected for now.** The builds are not yet signed with a paid certificate: on Windows choose *More info > Run anyway* in SmartScreen; on macOS right-click the app and choose *Open* (or use *System Settings > Privacy & Security > Open Anyway*); on Android allow installing from your browser or file manager.
 
-## What's in v0.1.0
+## What's in v0.2.0
 
+- **Save and Continue:** the game autosaves and picks up where you left off. Saves live next to the game (see Downloads)
+- **A menu** (Esc, or MENU on touch screens): Animadex, Save game, New game, Resume
 - **151 original animas** in 71 evolution families across 12 types, each with its own sprite, stats, and dex entry (see below)
-- **The Animadex:** press Esc (or tap DEX on a touch screen) to browse them all
+- **The Animadex:** open it from the menu to browse them all
 - **Trainers with line of sight** who spot you, walk up, and challenge you. Battles come in a later update
 - **Wild animas** hiding in tall grass, with per-map encounter tables
 - **31 unique character looks:** the hero, villagers, and every trainer have their own hair, outfit, and accessories
@@ -46,7 +50,7 @@ Not sure which one? Windows, Mac, and most modern Android phones want the 64-bit
 - An original 16x16 tileset, and a hand-drawn bitmap font (*Animas Pixel*) that stays crisp at any size
 - On-screen touch controls on phones and tablets
 - Automated builds for Windows, Linux, macOS, Android (and iOS) on every release
-- A headless smoke test that covers movement, warps, NPCs, the roster, the Animadex, encounters, and trainer challenges
+- A headless smoke test that covers movement, warps, NPCs, the roster, the menu, saving and continuing, encounters, and trainer challenges
 
 ## Meet the animas
 
@@ -76,18 +80,18 @@ Open Godot, click **Import**, choose `project.godot`, then press **F5**.
 |-------------------------|-----------------------|
 | Move / turn             | Arrow keys or D-pad   |
 | Talk / read / advance   | Enter or Space        |
-| Open the Animadex       | Esc (DEX button on touch) |
+| Menu (Animadex, save)   | Esc (MENU button on touch) |
 
 On phones and tablets an on-screen D-pad and **A** button appear. The browser demo also accepts WASD and Z.
 
 ## Roadmap
 
 - [x] **v0.0.1:** grid movement, collision, warps, NPCs, dialogue, tileset
-- [x] **v0.1.0 (Phase 2):** 151 animas, the Animadex, wild encounters, trainers with line of sight, unique character looks, Route 1
+- [x] **v0.2.0:** 151 animas, the Animadex, wild encounters, trainers with line of sight, unique character looks, Route 1, saving and continuing, a game menu, portable installs
 - [ ] **Phase 3:** moves, abilities, and the type chart
 - [ ] **Phase 4:** turn-based battles (damage formula, type effectiveness, status effects, enemy AI)
 - [ ] **Phase 5:** catching, party, bag, XP, leveling, evolution
-- [ ] **Phase 6:** gym leader, save/load, menus, music, polish
+- [ ] **Phase 6:** gym leader, options menu, music, polish
 
 ## Contributing
 

@@ -10,7 +10,7 @@ const BUTTONS := [
 	["ui_left", "<", Vector2(1, 111), Vector2(22, 22)],
 	["ui_right", ">", Vector2(45, 111), Vector2(22, 22)],
 	["ui_accept", "A", Vector2(206, 126), Vector2(30, 30)],
-	["ui_cancel", "DEX", Vector2(204, 4), Vector2(32, 18)],
+	["ui_cancel", "MENU", Vector2(196, 4), Vector2(40, 18)],
 ]
 
 

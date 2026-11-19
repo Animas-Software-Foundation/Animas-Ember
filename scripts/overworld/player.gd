@@ -25,6 +25,7 @@ var _walk_toggle := false
 
 
 func _ready() -> void:
+	add_to_group("player")
 	_look.character = look
 	if GameState.has_spawn:
 		position = tile_to_world(GameState.spawn_tile)

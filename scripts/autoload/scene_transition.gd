@@ -34,6 +34,7 @@ func change_scene(path: String, tile: Vector2i, facing := Vector2.DOWN, duration
 
 	GameState.input_locked = false
 	_busy = false
+	SaveGame.save()
 
 
 func _fade_to(alpha: float, duration: float) -> void:

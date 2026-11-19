@@ -1,0 +1,25 @@
+[package]
+name = "animas-setup"
+version = "0.2.0"
+edition = "2021"
+description = "Graphical self-extracting installer for Animas: Ember (used for the Windows setup.exe)"
+publish = false
+
+[[bin]]
+name = "animas-setup"
+path = "src/main.rs"
+
+[dependencies]
+eframe = "0.29"
+zip = { version = "2.2", default-features = false, features = ["deflate"] }
+
+# The folder picker is only used on Windows, where this installer ships.
+[target.'cfg(windows)'.dependencies]
+rfd = "0.15"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

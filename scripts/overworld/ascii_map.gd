@@ -46,6 +46,7 @@ func _setup() -> void:
 
 
 func _ready() -> void:
+	GameState.current_map = scene_file_path
 	_setup()
 	_build_tiles()
 	_build_warps()

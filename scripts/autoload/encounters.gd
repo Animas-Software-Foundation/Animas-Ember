@@ -46,6 +46,7 @@ func wild(anima_id: int, level: int) -> void:
 		"It is a %s anima. (Battles arrive in a later update.)" % "/".join(anima.types),
 	])
 	_root.visible = false
+	SaveGame.save()
 
 
 func trainer_battle(trainer: Trainer) -> void:
@@ -72,6 +73,7 @@ func trainer_battle(trainer: Trainer) -> void:
 		"(Battles arrive in a later update. You win by default!)",
 	])
 	_root.visible = false
+	SaveGame.save()
 
 
 func _place_sprite(tex: Texture2D, pos: Vector2, size: float) -> void:
