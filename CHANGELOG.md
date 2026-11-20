@@ -56,5 +56,5 @@ First tagged release: the overworld foundation.
 - Browser demo (`docs/index.html`) for GitHub Pages
 - Developer documentation in `docs/DEVELOPING.md`
 
-[0.2.0]: https://github.com/pixel-pulse-games/Animas-Ember/releases/tag/v0.2.0
-[0.0.1]: https://github.com/pixel-pulse-games/Animas-Ember/releases/tag/v0.0.1
+[0.2.0]: https://github.com/Animas-Software-Foundation/Animas-Ember/releases/tag/v0.2.0
+[0.0.1]: https://github.com/Animas-Software-Foundation/Animas-Ember/releases/tag/v0.0.1

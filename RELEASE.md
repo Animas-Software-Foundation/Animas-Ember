@@ -15,6 +15,6 @@ This release brings the world to life and lets you keep your progress. There are
 
 ## Try it
 
-Play instantly in your browser at https://pixel-pulse-games.github.io/Animas-Ember/, or pick your platform from the downloads below. Builds are not yet code-signed, so expect a security prompt on first run (see the README for how to get past it).
+Play instantly in your browser at https://animas-software-foundation.github.io/Animas-Ember/, or pick your platform from the downloads below. Builds are not yet code-signed, so expect a security prompt on first run (see the README for how to get past it).
 
-Full details in the [CHANGELOG](https://github.com/pixel-pulse-games/Animas-Ember/blob/main/CHANGELOG.md).
+Full details in the [CHANGELOG](https://github.com/Animas-Software-Foundation/Animas-Ember/blob/main/CHANGELOG.md).

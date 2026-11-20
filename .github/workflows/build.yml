@@ -347,7 +347,7 @@ jobs:
             # builds signed with a different key; add the ANDROID_* secrets for stable releases.
             KUSER="animas"; KPASS="android-ci"
             keytool -genkeypair -v -keystore "$KS" -alias "$KUSER" -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass "$KPASS" -keypass "$KPASS" -dname "CN=Animas Ember CI, O=Pixel Pulse Games"
+              -storepass "$KPASS" -keypass "$KPASS" -dname "CN=Animas Ember CI, O=Animas Software Foundation"
           fi
           echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=$KS"       >> "$GITHUB_ENV"
           echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=$KUSER"    >> "$GITHUB_ENV"

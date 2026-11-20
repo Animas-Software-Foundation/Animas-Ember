@@ -55,7 +55,7 @@ def build_entries(platform, game, launcher, version):
     readme = (f"Animas: Ember {version}\n\nRun \"{launch_name}\" to play.\n\n"
               "This is a portable install: your saves and settings are kept in the \"data\" folder next to the game,\n"
               "and nothing is written to AppData or your home folder. To move the game to another computer or a USB stick,\n"
-              "copy this whole folder. To uninstall, delete it.\n\nhttps://github.com/pixel-pulse-games/Animas-Ember\n")
+              "copy this whole folder. To uninstall, delete it.\n\nhttps://github.com/Animas-Software-Foundation/Animas-Ember\n")
     entries += [
         (".launch", launch_name.encode(), 0o644),
         ("README.txt", readme.encode(), 0o644),

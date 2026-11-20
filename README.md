@@ -4,16 +4,16 @@
 ![Godot](https://img.shields.io/badge/Godot-4.7%2B-478cbf?logo=godotengine&logoColor=white)
 ![Status](https://img.shields.io/badge/status-pre--alpha-orange)
 
-**A creature-collecting, turn-based RPG built in Godot 4, in the spirit of the classic handheld monster-catching games.** Made by [Pixel Pulse Games](https://github.com/pixel-pulse-games).
+**A creature-collecting, turn-based RPG built in Godot 4, in the spirit of the classic handheld monster-catching games.** Made by [Animas Software Foundation](https://github.com/Animas-Software-Foundation).
 
-[![Animas: Ember screenshot](docs/screenshot.png)](https://pixel-pulse-games.github.io/Animas-Ember/)
+[![Animas: Ember screenshot](docs/screenshot.png)](https://animas-software-foundation.github.io/Animas-Ember/)
 
 > **Pre-alpha.** v0.2.0: explore the town and Route 1, meet all 151 animas, get challenged by trainers, and save your progress. Real battles, catching, and moves are on the roadmap below.
 
 ## Play it
 
-- **Download a build:** grab your platform from the [latest release](https://github.com/pixel-pulse-games/Animas-Ember/releases/latest) (see [Downloads](#downloads)).
-- **In your browser (no install):** <https://pixel-pulse-games.github.io/Animas-Ember/>, the project website with a playable starter town. Works on phones with an on-screen D-pad.
+- **Download a build:** grab your platform from the [latest release](https://github.com/Animas-Software-Foundation/Animas-Ember/releases/latest) (see [Downloads](#downloads)).
+- **In your browser (no install):** <https://animas-software-foundation.github.io/Animas-Ember/>, the project website with a playable starter town. Works on phones with an on-screen D-pad.
 - **In Godot:** see [Run the project](#run-the-project) below.
 
 ## Downloads
@@ -54,7 +54,7 @@ Not sure which one? Windows, Mac, and most modern Android phones want the 64-bit
 
 ## Meet the animas
 
-All 151 are original: names, designs, and stats. Twelve types (Ember, Tide, Bloom, Volt, Stone, Gale, Frost, Shade, Lumen, Venom, Iron, Wild), 30 three-stage lines, 20 two-stage lines, and 21 standalone animas. Browse them with filters on [the website](https://pixel-pulse-games.github.io/Animas-Ember/#animas) or in-game with the Animadex.
+All 151 are original: names, designs, and stats. Twelve types (Ember, Tide, Bloom, Volt, Stone, Gale, Frost, Shade, Lumen, Venom, Iron, Wild), 30 three-stage lines, 20 two-stage lines, and 21 standalone animas. Browse them with filters on [the website](https://animas-software-foundation.github.io/Animas-Ember/#animas) or in-game with the Animadex.
 
 ![All 151 animas](docs/animas_preview.png)
 
@@ -69,7 +69,7 @@ Every character has a unique look, from the hero to the elder to each trainer.
 **Requirements:** [Godot 4.7 or newer](https://godotengine.org/download) (the standard build, not .NET).
 
 ```bash
-git clone https://github.com/pixel-pulse-games/Animas-Ember.git
+git clone https://github.com/Animas-Software-Foundation/Animas-Ember.git
 ```
 
 Open Godot, click **Import**, choose `project.godot`, then press **F5**.
@@ -95,7 +95,7 @@ On phones and tablets an on-screen D-pad and **A** button appear. The browser de
 
 ## Contributing
 
-Ideas, bug reports, and pull requests are welcome. Open an [issue](https://github.com/pixel-pulse-games/Animas-Ember/issues) first for anything big. Setup, project structure, and how to add maps, NPCs, and tiles are in [docs/DEVELOPING.md](docs/DEVELOPING.md).
+Ideas, bug reports, and pull requests are welcome. Open an [issue](https://github.com/Animas-Software-Foundation/Animas-Ember/issues) first for anything big. Setup, project structure, and how to add maps, NPCs, and tiles are in [docs/DEVELOPING.md](docs/DEVELOPING.md).
 
 1. Fork the repo and create a branch: `git checkout -b feature/my-feature`
 2. Follow the [GDScript style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html) (tabs, `snake_case`, type hints).
@@ -107,7 +107,7 @@ Everything in this project (creatures, characters, names, maps, music, art) must
 
 ## License
 
-No license has been chosen yet, so all rights are reserved by Pixel Pulse Games until one is added.
+No license has been chosen yet, so all rights are reserved by Animas Software Foundation until one is added.
 
 ## Changelog
 
